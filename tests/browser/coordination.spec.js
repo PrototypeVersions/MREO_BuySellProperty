@@ -61,3 +61,30 @@ test("seller-created property listings are routed through the detail page",async
  await expect(interest).toHaveAttribute("href",/auction=seller-created-test/);
  await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
 });
+
+test("seller-created listing uses uploaded images and exposes all uploaded media",async({page})=>{
+ await page.goto("/seller.html");
+ const created=await page.evaluate(async()=>{
+  const submission={title:"77 Seller Media Way, Dallas, TX 75201",kind:"property",minimum:200000,days:1,portfolio:[],details:{propertyCity:"Dallas",propertyState:"TX",propertySize:"1800",propertyBedrooms:"3",propertyBathrooms:"2",propertyType:"Single-family home"}};
+  const account=await MreoService.register("seller",{name:"Media Seller",email:"media-seller@example.com"},submission);
+  const png=new File([new Uint8Array([137,80,78,71,13,10,26,10])],"front.png",{type:"image/png"});
+  const jpg=new File([new Uint8Array([255,216,255,217])],"back.jpg",{type:"image/jpeg"});
+  const mp4=new File([new Uint8Array([0,0,0,24,102,116,121,112])],"walkthrough.mp4",{type:"video/mp4"});
+  await MreoService.saveMedia(account.submission.draftId,[png,jpg,mp4]);
+  await MreoService.checkout("seller",true);return await MreoService.activate("seller");
+ });
+ await page.goto("/properties.html");
+ const row=page.locator("#new-listings .property-row").filter({hasText:"77 Seller Media Way"});
+ await expect(row.getByRole("link",{name:"View / Prepare Interest"})).toBeVisible();
+ await expect.poll(async()=>await row.locator(".property-thumbnail img").getAttribute("src")).toMatch(/^blob:/);
+ await row.getByRole("link",{name:"View / Prepare Interest"}).click();
+ expect(new URL(page.url()).searchParams.get("auction")).toBe(created.auctionId);
+ await expect(page.locator("#seller-media-section")).toBeVisible();
+ await expect(page.locator("#seller-media-gallery img")).toHaveCount(2);
+ await expect(page.locator("#seller-media-gallery video")).toHaveCount(1);
+ await expect(page.locator("#seller-media-gallery")).toContainText("front.png");
+ await expect(page.locator("#seller-media-gallery")).toContainText("back.jpg");
+ await expect(page.locator("#seller-media-gallery")).toContainText("walkthrough.mp4");
+ const interest=page.getByRole("link",{name:"Prepare Interest"});
+ expect(new URL(await interest.getAttribute("href"),page.url()).searchParams.get("auction")).toBe(created.auctionId);
+});

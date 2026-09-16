@@ -19,6 +19,21 @@ function demoAccount(state,auction,role,actor){
 }
 function clear(){localStorage.removeItem(key);for(const role of ["buyer","seller"])sessionStorage.removeItem(sessionKey(role));}
 const uid=prefix=>prefix+"-"+crypto.randomUUID();
+const mediaDbName="mreo-media-v1:"+root;
+function openMediaDb(){
+ if(!globalThis.indexedDB)return Promise.reject(Error("Browser media storage is unavailable."));
+ return new Promise((resolve,reject)=>{const request=indexedDB.open(mediaDbName,1);request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains("media")){const store=db.createObjectStore("media",{keyPath:"id"});store.createIndex("mediaKey","mediaKey",{unique:false});}};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error||Error("Media storage could not be opened."));});
+}
+async function getMedia(mediaKey){
+ if(!mediaKey)return [];
+ const db=await openMediaDb();
+ return new Promise((resolve,reject)=>{const tx=db.transaction("media","readonly"),request=tx.objectStore("media").index("mediaKey").getAll(mediaKey);request.onsuccess=()=>resolve((request.result||[]).sort((a,b)=>(a.index||0)-(b.index||0)));request.onerror=()=>reject(request.error||Error("Seller media could not be loaded."));tx.oncomplete=()=>db.close();});
+}
+async function saveMedia(mediaKey,files){
+ if(!mediaKey||!files?.length)return [];
+ const prior=await getMedia(mediaKey),db=await openMediaDb(),items=Array.from(files).map((file,index)=>({id:mediaKey+":"+index,mediaKey,index,name:file.name||("media-"+(index+1)),type:file.type||"application/octet-stream",size:file.size||0,lastModified:file.lastModified||0,blob:file}));
+ return new Promise((resolve,reject)=>{const tx=db.transaction("media","readwrite"),store=tx.objectStore("media");prior.forEach(item=>store.delete(item.id));items.forEach(item=>store.put(item));tx.oncomplete=()=>{db.close();resolve(items.map(({blob,...item})=>item));};tx.onerror=()=>{db.close();reject(tx.error||Error("Seller media could not be saved in this browser."));};tx.onabort=()=>{db.close();reject(tx.error||Error("Seller media could not be saved in this browser."));};});
+}
 async function api(path,options={},role=currentRole()){
  if(!config.apiBase||!/^https:\/\//.test(config.apiBase))throw Error("The payment and auction service is not connected.");
  const token=session(role)?.token;
@@ -109,12 +124,12 @@ async function activate(role){
  if(a.submission.auctionId)return {auctionId:a.submission.auctionId};
  const draft=a.submission,id=uid("auction");
  const auction=C.createAuction({id,title:draft.title,sellerId:a.id,minimum:draft.minimum,days:draft.days,kind:draft.kind,portfolio:draft.portfolio||[],demo:true});
- auction.example=false;s.auctions[id]=auction;a.submission.auctionId=id;write(s);return {auctionId:id};
+ auction.example=false;auction.mediaKey=draft.draftId||"";auction.details=draft.details||{};s.auctions[id]=auction;a.submission.auctionId=id;write(s);return {auctionId:id};
 }
 async function list(){
  if(!demo)return (await api("/auctions")).auctions.filter(visibleAuction);
  const s=read(),auctions=Object.values(s.auctions).filter(visibleAuction);for(const a of auctions)C.seedDemo(a);write(s);
- return auctions.map(({id,title,kind,reserve,portfolio,portfolioCount,status,endsAt,example})=>({id,title,kind,reserve,portfolioCount:portfolioCount??portfolio?.length??0,status,endsAt,example}));
+ return auctions.map(({id,title,kind,reserve,portfolio,portfolioCount,status,endsAt,example,mediaKey,details})=>({id,title,kind,reserve,portfolioCount:portfolioCount??portfolio?.length??0,status,endsAt,example,mediaKey:mediaKey||"",details:details||{}}));
 }
 async function auction(id,view="buyer",actor){
  if(!demo)return api("/auctions/"+encodeURIComponent(id)+"?view="+encodeURIComponent(view),{},view);
@@ -131,5 +146,5 @@ async function bid(id,amount,actor){
 async function finish(id){if(!demo)throw Error("Test controls are unavailable.");const s=read(),a=s.auctions[id];if(!a)throw Error("Auction not found.");C.seedDemo(a,a.endsAt-1);const now=Date.now();for(const b of a.bids)b.at=Math.min(b.at,now);a.endsAt=now;C.closeAuction(a);write(s);}
 async function restart(id){if(!demo)throw Error("Test controls are unavailable.");const s=read(),a=s.auctions[id];if(!a)throw Error("Auction not found.");const fresh=C.createAuction({...a,now:Date.now()-31000});fresh.example=a.example;s.auctions[id]=C.seedDemo(fresh);write(s);}
 async function completeSale(id){if(!demo)throw Error("Only test closing can be simulated here.");const s=read(),a=s.auctions[id];C.closeAuction(a);if(!a.winnerId)throw Error("There is no qualifying winning bid.");a.saleCompleted=true;write(s);}
-globalThis.MreoService={demo,key,init,register,me,checkout,confirm,activate,list,auction,bid,finish,restart,completeSale,session,currentRole,setRole,clear};
+globalThis.MreoService={demo,key,init,register,me,checkout,confirm,activate,list,auction,bid,finish,restart,completeSale,session,currentRole,setRole,clear,saveMedia,getMedia};
 })();

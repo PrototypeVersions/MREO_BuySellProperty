@@ -42,7 +42,8 @@ async function submitSeller(){
  if(portfolio&&!uploadedRows.length)throw Error("Upload and review your portfolio spreadsheet first.");
  const title=portfolio?field("portfolio-title"):[field("property-address"),field("property-city"),field("property-state")+" "+field("property-zip")].filter(Boolean).join(", ");
  const submission={title,kind:portfolio?"portfolio":"property",minimum:C.money(field("seller-minimum")),days:Number(field("auction-days")),portfolio:portfolio?uploadedRows:[],details:Object.fromEntries([...new FormData(form)].filter(([,v])=>typeof v==="string"))};
- await S.register("seller",{name:field("seller-name"),email:field("seller-email")},submission);
+ const account=await S.register("seller",{name:field("seller-name"),email:field("seller-email")},submission);
+ const mediaFiles=$("property-media")?.files;if(!portfolio&&mediaFiles?.length&&account?.submission?.draftId)await S.saveMedia(account.submission.draftId,mediaFiles);
  location.href="payment.html?role=seller";
 }
 async function submitBuyer(){
@@ -96,14 +97,21 @@ async function portfolio(){
  $("portfolio-search").addEventListener("input",render);$("portfolio-condition").addEventListener("change",render);render();
  }catch(e){message("portfolio-message",e.message,true);}
 }
+function sellerDetailHref(a){
+ const d=a.details||{},q=new URLSearchParams();q.set("auction",a.id);q.set("address",a.title);q.set("price",String(a.reserve||""));q.set("image","assets/property-placeholder.svg");q.set("location",[d.propertyCity,d.propertyState].filter(Boolean).join(", ")||(S.demo?"Your test listing":"Seller listing"));q.set("description",d.propertyConditionNotes||d.propertyDescription||"Seller-provided as-is property listing.");if(d.propertySize)q.set("size",d.propertySize+" sq ft");if(d.propertyBedrooms||d.propertyBathrooms)q.set("bedsBaths",[d.propertyBedrooms||"NA",d.propertyBathrooms||"NA"].join(" / "));if(d.propertyType)q.set("type",d.propertyType);if(a.mediaKey)q.set("mediaKey",a.mediaKey);return "property.html?"+q.toString();
+}
+async function hydrateSellerThumbnails(container){
+ const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[Math.floor(Math.random()*photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
+}
 function marketplace(){
  const container=$("new-listings");if(!container)return;
  const kind=container.dataset.listingKind||"property";
  return S.list().then(auctions=>{
   container.innerHTML=auctions.filter(a=>!a.example&&(kind==="portfolio"?a.kind==="portfolio":a.kind!=="portfolio")).map(a=>{
    if(a.kind==="portfolio")return '<a class="portfolio-entry" href="portfolio.html?id='+encodeURIComponent(a.id)+'"><img src="assets/mreo-portfolio.png" alt="MREO Buy Portfolio As Is" width="768" height="512" loading="lazy"><div><p class="section-label">'+(S.demo?"Your test portfolio":"Available portfolio")+'</p><h2>'+esc(a.title)+'</h2><p>'+(a.portfolioCount??a.portfolio?.length??0)+' properties · Required bid '+cash(a.reserve)+'. Review the complete spreadsheet before preparing your interest.</p><span class="text-link">View portfolio spreadsheet →</span></div></a>';
-   return '<article class="property-row"><div class="property-thumbnail"><img src="assets/property-placeholder.svg" alt="Property awaiting seller photographs" loading="lazy"></div><div class="property-main-info"><p class="property-location">'+(S.demo?"Your test listing":"Seller listing")+'</p><h2>'+esc(a.title)+'</h2><p>As-is property</p></div><div class="property-facts"><div><span class="property-fact-label">Required bid</span><strong>'+cash(a.reserve)+'</strong></div></div><div class="property-action"><a class="primary-button" href="auction.html?id='+encodeURIComponent(a.id)+'">View auction</a></div></article>';
+   return '<article class="property-row"><div class="property-thumbnail"><img src="assets/property-placeholder.svg" data-media-key="'+esc(a.mediaKey||"")+'" alt="Property awaiting seller photographs" loading="lazy"></div><div class="property-main-info"><p class="property-location">'+esc([a.details?.propertyCity,a.details?.propertyState].filter(Boolean).join(", ")||(S.demo?"Your test listing":"Seller listing"))+'</p><h2>'+esc(a.title)+'</h2><p class="property-description">Seller-provided as-is property listing.</p></div><div class="property-facts"><div><span class="property-fact-label">Required bid</span><strong>'+cash(a.reserve)+'</strong></div></div><div class="property-action"><a class="primary-button button-blue" href="'+sellerDetailHref(a)+'">View / Prepare Interest</a></div></article>';
   }).join("");
+  return hydrateSellerThumbnails(container);
  }).catch(e=>message("marketplace-message",e.message,true));
 }
 async function auctionPage(){

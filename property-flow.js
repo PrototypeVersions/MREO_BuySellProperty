@@ -88,13 +88,43 @@
 
   function contextQuery() {
     const out = new URLSearchParams();
-    ["auction", "address", "price", "image", "description", "location", "size", "bedsBaths", "condition", "type"].forEach((key) => {
+    ["auction", "address", "price", "image", "description", "location", "size", "bedsBaths", "condition", "type", "mediaKey"].forEach((key) => {
       const value = params.get(key);
       if (value) out.set(key, value);
     });
     out.set("type", "property");
     return out;
   }
+
+  async function loadSellerMedia(mediaKey,address) {
+  if (!mediaKey || !globalThis.MreoService?.getMedia) return;
+  const media = await globalThis.MreoService.getMedia(mediaKey);
+  if (!media.length) return;
+  const section = document.getElementById("seller-media-section");
+  const gallery = document.getElementById("seller-media-gallery");
+  if (!section || !gallery) return;
+  gallery.innerHTML = "";
+  const photos = media.filter(item => (item.type || "").startsWith("image/") && item.blob);
+  if (photos.length) {
+    const main = document.getElementById("property-detail-image");
+    const chosen = photos[Math.floor(Math.random() * photos.length)];
+    main.src = URL.createObjectURL(chosen.blob);
+    main.alt = "Seller-provided property photograph for " + address;
+    main.closest(".single-property-media").hidden = false;
+  }
+  media.forEach((item,index) => {
+    if (!item.blob) return;
+    const figure = document.createElement("figure");
+    const url = URL.createObjectURL(item.blob);
+    if ((item.type || "").startsWith("image/")) {
+      const img = document.createElement("img"); img.src = url; img.alt = item.name || ("Property photograph " + (index + 1)); img.loading = "lazy"; figure.appendChild(img);
+    } else if ((item.type || "").startsWith("video/")) {
+      const video = document.createElement("video"); video.src = url; video.controls = true; video.preload = "metadata"; video.setAttribute("playsinline", ""); video.setAttribute("aria-label", item.name || ("Property video " + (index + 1))); figure.appendChild(video);
+    } else return;
+    const caption = document.createElement("figcaption"); caption.textContent = item.name || ("Seller media " + (index + 1)); figure.appendChild(caption); gallery.appendChild(figure);
+  });
+  section.hidden = gallery.children.length === 0;
+}
 
   function populateDetailPage() {
     const title = document.getElementById("property-detail-address");
@@ -137,6 +167,8 @@
     });
     document.getElementById("property-prepare-interest").href = "buyer.html?" + buyer.toString();
     document.getElementById("property-coordinate").href = "coordination.html?" + contextQuery().toString();
+    const mediaKey = params.get("mediaKey");
+    if (mediaKey) loadSellerMedia(mediaKey, address).catch(() => {});
   }
 
   if (document.body.classList.contains("properties-page")) {
