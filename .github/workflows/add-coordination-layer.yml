@@ -23,7 +23,6 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          # Add Coordinate to existing navigation everywhere.
           old_nav = '<a href="portfolios.html">Portfolios</a><a href="auction.html">Auctions</a>'
           new_nav = '<a href="portfolios.html">Portfolios</a><a href="coordination.html">Coordinate</a><a href="auction.html">Auctions</a>'
           for path in Path('.').glob('*.html'):
@@ -31,34 +30,23 @@ jobs:
               if old_nav in text:
                   path.write_text(text.replace(old_nav, new_nav))
 
-          # Route ordinary marketplace listings through the reusable detail page.
           p = Path('properties.html')
           text = p.read_text()
           if 'property-flow.js?v=20260916' not in text:
               text = text.replace('</body>', '<script src="property-flow.js?v=20260916"></script></body>')
-          text = text.replace(
-              'Select a property to prepare\n        buyer interest and an as-is offer.',
-              'Select a property to review its detail page, prepare\n        buyer interest, or coordinate services around the property.'
-          )
+          text = text.replace('Select a property to prepare\n        buyer interest and an as-is offer.', 'Select a property to review its detail page, prepare\n        buyer interest, or coordinate services around the property.')
           p.write_text(text)
 
-          # Turkey detail page gets the same coordination action while keeping its gallery/video flow.
           p = Path('turkey-property.html')
           text = p.read_text()
-          old = '''<a class="primary-button button-blue" id="turkey-prepare-interest"
-        href="buyer.html?address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000">Prepare Interest <span aria-hidden="true">→</span></a>'''
-          new = '''<div class="form-actions">
-        <a class="primary-button button-blue" id="turkey-prepare-interest"
-          href="buyer.html?address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000">Prepare Interest <span aria-hidden="true">→</span></a>
-        <a class="secondary-button" id="turkey-coordinate" href="coordination.html?type=property&amp;address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000&amp;image=assets%2Fturkey%2Fphotos%2Fvideoframe_18959.webp">Coordinate This Property <span aria-hidden="true">→</span></a>
-      </div>'''
-          if old not in text and 'id="turkey-coordinate"' not in text:
-              raise SystemExit('Turkey Prepare Interest anchor not found')
+          old = '<a class="primary-button button-blue" id="turkey-prepare-interest"\n        href="buyer.html?address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000">Prepare Interest <span aria-hidden="true">→</span></a>'
+          new = '<div class="form-actions">\n        <a class="primary-button button-blue" id="turkey-prepare-interest"\n          href="buyer.html?address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000">Prepare Interest <span aria-hidden="true">→</span></a>\n        <a class="secondary-button" id="turkey-coordinate" href="coordination.html?type=property&amp;address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000&amp;image=assets%2Fturkey%2Fphotos%2Fvideoframe_18959.webp">Coordinate This Property <span aria-hidden="true">→</span></a>\n      </div>'
           if old in text:
               text = text.replace(old, new, 1)
+          elif 'id="turkey-coordinate"' not in text:
+              raise SystemExit('Turkey Prepare Interest anchor not found')
           p.write_text(text)
 
-          # Portfolio page can enter the same coordination layer with portfolio context.
           p = Path('portfolio.html')
           text = p.read_text()
           interest = '<a class="primary-button" id="portfolio-interest" href="buyer.html?auction=demo-portfolio">Prepare portfolio interest →</a>'
@@ -68,47 +56,25 @@ jobs:
               text = text.replace(interest, interest + coordinate, 1)
           p.write_text(text)
 
-          # Give the landing page a concise introduction to the new lifecycle layer.
           p = Path('index.html')
           text = p.read_text()
           if 'coordination.css?v=20260916' not in text:
               text = text.replace('<link rel="stylesheet" href="marketplace.css?v=20260914-blind-auction">', '<link rel="stylesheet" href="marketplace.css?v=20260914-blind-auction">\n  <link rel="stylesheet" href="coordination.css?v=20260916">')
           if 'id="coordination-intro-heading"' not in text:
-              section = '''
-  <section class="sell-value" aria-labelledby="coordination-intro-heading">
-    <p class="section-label">MREO · Coordination Network</p>
-    <h2 id="coordination-intro-heading">From transaction<br>to operation.</h2>
-    <p>A property does not stop needing coordination when an auction ends. Keep title transfer, construction, licensed representation, and rental operations connected to the same property record.</p>
-    <div class="coordination-grid">
-      <a class="coordination-card" href="coordination-service.html?service=title"><span class="coordination-number">01 · TRANSFER</span><h2>Title Transfer</h2><p>Coordinate settlement providers, documents, title review, requirements, and closing.</p><span class="card-action">Explore title coordination →</span></a>
-      <a class="coordination-card" href="coordination-service.html?service=contractors"><span class="coordination-number">02 · IMPROVE</span><h2>Contractors</h2><p>Package the scope of work, invite quotes, compare providers, and track the job.</p><span class="card-action">Explore contractor coordination →</span></a>
-      <a class="coordination-card" href="coordination-service.html?service=realtors"><span class="coordination-number">03 · REPRESENT</span><h2>Realtors</h2><p>Connect properties to licensed local representation, showings, leasing, and transaction support.</p><span class="card-action">Explore realtor coordination →</span></a>
-      <a class="coordination-card" href="coordination-service.html?service=rentals"><span class="coordination-number">04 · RENT / MANAGE</span><h2>Property Rentals</h2><p>Move from rental readiness to tenant placement, lease coordination, and ongoing management.</p><span class="card-action">Explore rental coordination →</span></a>
-    </div>
-    <div class="form-actions"><a class="primary-button button-blue" href="coordination.html">Explore Coordination →</a></div>
-  </section>
-'''
+              section = '<section class="sell-value" aria-labelledby="coordination-intro-heading"><p class="section-label">MREO · Coordination Network</p><h2 id="coordination-intro-heading">From transaction<br>to operation.</h2><p>A property does not stop needing coordination when an auction ends. Keep title transfer, construction, licensed representation, and rental operations connected to the same property record.</p><div class="coordination-grid"><a class="coordination-card" href="coordination-service.html?service=title"><span class="coordination-number">01 · TRANSFER</span><h2>Title Transfer</h2><p>Coordinate settlement providers, documents, title review, requirements, and closing.</p><span class="card-action">Explore title coordination →</span></a><a class="coordination-card" href="coordination-service.html?service=contractors"><span class="coordination-number">02 · IMPROVE</span><h2>Contractors</h2><p>Package the scope of work, invite quotes, compare providers, and track the job.</p><span class="card-action">Explore contractor coordination →</span></a><a class="coordination-card" href="coordination-service.html?service=realtors"><span class="coordination-number">03 · REPRESENT</span><h2>Realtors</h2><p>Connect properties to licensed local representation, showings, leasing, and transaction support.</p><span class="card-action">Explore realtor coordination →</span></a><a class="coordination-card" href="coordination-service.html?service=rentals"><span class="coordination-number">04 · RENT / MANAGE</span><h2>Property Rentals</h2><p>Move from rental readiness to tenant placement, lease coordination, and ongoing management.</p><span class="card-action">Explore rental coordination →</span></a></div><div class="form-actions"><a class="primary-button button-blue" href="coordination.html">Explore Coordination →</a></div></section>'
               text = text.replace('</main>', section + '</main>', 1)
           p.write_text(text)
 
-          # Update the browser test to follow the new generic property-detail step.
           p = Path('tests/browser/marketplace.spec.js')
           text = p.read_text()
-          text = text.replace(".property-marketplace a[href^=\"buyer.html?\"]", ".property-marketplace a[href^=\"property.html?\"]")
-          text = text.replace(".property-marketplace a[href^=\"buyer.html?auction='", ".property-marketplace a[href^=\"property.html?auction='")
-          old_step = '''expect(new URL(page.url()).searchParams.get("auction")).toBe(id);
-   await expect(page.locator("#buyer-offer-address")).toHaveValue(address);'''
-          new_step = '''expect(new URL(page.url()).searchParams.get("auction")).toBe(id);
-   await expect(page).toHaveURL(/property\\.html\\?/);
-   await expect(page.locator("#property-detail-address")).toHaveText(address);
-   await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
-   await page.getByRole("link",{name:"Prepare Interest",exact:true}).click();
-   await expect(page.locator("#buyer-offer-address")).toHaveValue(address);'''
+          text = text.replace('.property-marketplace a[href^="buyer.html?"]', '.property-marketplace a[href^="property.html?"]')
+          text = text.replace('.property-marketplace a[href^="buyer.html?auction=', '.property-marketplace a[href^="property.html?auction=')
+          old_step = 'expect(new URL(page.url()).searchParams.get("auction")).toBe(id);\n   await expect(page.locator("#buyer-offer-address")).toHaveValue(address);'
+          new_step = 'expect(new URL(page.url()).searchParams.get("auction")).toBe(id);\n   await expect(page).toHaveURL(/property\\.html\\?/);\n   await expect(page.locator("#property-detail-address")).toHaveText(address);\n   await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();\n   await page.getByRole("link",{name:"Prepare Interest",exact:true}).click();\n   await expect(page.locator("#buyer-offer-address")).toHaveValue(address);'
           if old_step in text:
               text = text.replace(old_step, new_step, 1)
           elif '#property-detail-address' not in text:
               raise SystemExit('Marketplace browser test step anchor not found')
-          # Expand the basic load test with the new public pages.
           text = text.replace('"auction.html","payment.html"]', '"auction.html","payment.html","property.html","coordination.html","coordination-service.html?service=title"]')
           p.write_text(text)
 
@@ -123,6 +89,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add '*.html' tests/browser/marketplace.spec.js
+          git add -- '*.html' tests/browser/marketplace.spec.js
           git commit -m "Integrate coordination layer with property marketplace"
           git push origin HEAD:main
