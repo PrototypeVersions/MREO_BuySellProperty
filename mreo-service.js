@@ -40,7 +40,7 @@ async function init(){
  const total=C.portfolioTotals(rows),now=Date.now()-31000;
  const examples=[
  {"id":"demo-property","title":"4218 Maple Ridge Drive, Dallas, TX 75229","minimum":350000},
- {id:"demo-portfolio",title:"Illustrative REO portfolio · 150 properties",minimum:Math.round(total.price)-C.feeFor({kind:"portfolio",portfolio:rows}),kind:"portfolio",portfolio:rows},
+ {id:"demo-portfolio",title:"Illustrative REO portfolio · 150 properties",minimum:rows.length?Math.round(total.price)-C.feeFor({kind:"portfolio",portfolio:rows}):1,kind:"portfolio",portfolio:rows},
  {"id":"demo-fort-worth","title":"7812 Oak Hollow Lane, Fort Worth, TX 76137","minimum":318000},
  {"id":"demo-plano","title":"2605 Preston Meadow Court, Plano, TX 75093","minimum":547000},
  {"id":"demo-irving","title":"1147 Riverside Terrace, Irving, TX 75062","minimum":428000},
