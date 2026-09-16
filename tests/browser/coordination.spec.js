@@ -37,15 +37,27 @@ test("each coordination pathway can start a property-linked request",async({page
  }
 });
 
-test("newly inserted property listings are routed through the detail page",async({page})=>{
+test("seller-created property listings are routed through the detail page",async({page})=>{
  await page.goto("/properties.html");
  await page.evaluate(()=>{
   const host=document.querySelector(".property-marketplace");
   const row=document.createElement("article");
   row.className="property-row";
-  row.innerHTML=`<div class="property-thumbnail"><img src="assets/property-placeholder.svg" alt="Test property"></div><div class="property-main-info"><p class="property-location">Test City</p><h2>1 Dynamic Lane</h2><p class="property-description">Dynamic listing</p></div><div class="property-facts"><div><span class="property-fact-label">Price</span><strong>$100,000</strong></div></div><div class="property-action"><a class="primary-button button-blue" href="buyer.html?auction=dynamic-test&address=1%20Dynamic%20Lane%2C%20Test%20City&price=100000">View / Prepare Interest</a></div>`;
+  row.innerHTML=`<div class="property-thumbnail"><img src="assets/property-placeholder.svg" alt="Property awaiting seller photographs"></div><div class="property-main-info"><p class="property-location">Your test listing</p><h2>1 Seller Lane, Test City, TX 75000</h2><p>As-is property</p></div><div class="property-facts"><div><span class="property-fact-label">Required bid</span><strong>$101,000</strong></div></div><div class="property-action"><a class="primary-button" href="auction.html?id=seller-created-test">View auction</a></div>`;
   host.appendChild(row);
  });
- const link=page.locator('.property-row').last().getByRole("link",{name:"View / Prepare Interest"});
+ const row=page.locator('.property-row').last();
+ const link=row.getByRole("link",{name:"View / Prepare Interest",exact:true});
  await expect(link).toHaveAttribute("href",/property\.html\?/);
+ await link.click();
+ await expect(page).toHaveURL(/property\.html\?/);
+ const detailUrl=new URL(page.url());
+ expect(detailUrl.searchParams.get("auction")).toBe("seller-created-test");
+ expect(detailUrl.searchParams.get("address")).toBe("1 Seller Lane, Test City, TX 75000");
+ expect(detailUrl.searchParams.get("price")).toBe("101000");
+ await expect(page.locator("#property-detail-address")).toHaveText("1 Seller Lane, Test City, TX 75000");
+ await expect(page.locator("#property-detail-price")).toHaveText("$101,000");
+ const interest=page.getByRole("link",{name:"Prepare Interest"});
+ await expect(interest).toHaveAttribute("href",/auction=seller-created-test/);
+ await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
 });
