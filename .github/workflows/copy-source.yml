@@ -1,0 +1,43 @@
+name: Copy MREO_BuySell snapshot
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out destination
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check out source
+        uses: actions/checkout@v4
+        with:
+          repository: PrototypeVersions/MREO_BuySell
+          ref: main
+          path: source
+
+      - name: Mirror source into destination
+        shell: bash
+        run: |
+          rsync -a --delete --exclude='.git/' --exclude='source/' source/ ./
+          rm -rf source
+
+      - name: Commit copied snapshot
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Destination already matches source."
+            exit 0
+          fi
+          git commit -m "Copy MREO_BuySell into MREO_BuySellProperty"
+          git push origin HEAD:main
