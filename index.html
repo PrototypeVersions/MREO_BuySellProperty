@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta
+    name="description"
+    content="MREO provides a streamlined prototype for buying and selling real estate as is."
+  >
+
+  <title>MREO | Real Estate Protocol</title>
+
+  <link rel="stylesheet" href="styles.css?v=20260913-hero-colors">
+  <link rel="stylesheet" href="marketplace.css?v=20260914-blind-auction">
+</head>
+
+<body class="landing-page">
+  <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="auction.html">Auctions</a></nav></header><div class="protocol-strip" data-mode-label></div>
+
+  <main>
+    <section
+      class="hero"
+      aria-labelledby="main-heading"
+    >
+      <div
+        class="hero-decoration"
+        aria-hidden="true"
+      >
+        <span class="shape shape-circle"></span>
+        <span class="shape shape-line"></span>
+        <span class="shape shape-square"></span>
+      </div>
+
+      <div class="hero-content">
+        <h1 id="main-heading">
+          MREO
+          <span>
+            A Real Estate Acquisition, Distribution, and Management Protocol
+          </span>
+        </h1>
+      </div>
+
+      <div
+        class="action-grid"
+        aria-label="Choose a property pathway"
+      >
+
+        <!-- BUYER PATHWAY -->
+
+        <article class="pathway-card buyer-card">
+          <div>
+            <h2>Buy</h2>
+
+            <p>
+              Explore individual properties and complete REO portfolios. Review the data, follow the auction, and prepare your as-is purchase.
+            </p>
+          </div>
+
+          <a
+            class="action-button action-button-dark"
+            href="buyer.html"
+          >
+            <span>Buy Property As Is</span>
+
+            <span
+              class="button-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+          </a>
+        </article>
+
+        <!-- SELLER PATHWAY -->
+
+        <article class="pathway-card seller-card">
+          <div>
+            <h2>Sell</h2>
+
+            <p>
+              Sell a property or an entire portfolio as is. Set your minimum and invite competing offers, with a $1,000 MREO fee only when the sale closes.
+            </p>
+          </div>
+
+          <a
+            class="action-button action-button-dark"
+            href="seller.html"
+          >
+            <span>Sell Property As Is</span>
+
+            <span
+              class="button-arrow"
+              aria-hidden="true"
+            >
+              →
+            </span>
+          </a>
+        </article>
+
+      </div>
+    </section>
+  <section class="sell-value"><p class="section-label">Your property. Its strongest opportunity.</p><h2>Sell as is.<br>Invite competing offers.</h2><p>Bring buyers together around your property’s present condition. MREO’s auction-style connection gives each interested buyer an opportunity to improve an offer, helping you pursue top dollar without making repairs first.</p><div class="value-grid"><div><strong>$1</strong><span>Participation starts with one dollar for buyers and sellers.</span></div><div><strong>$1,000</strong><span>One MREO success fee, only if your property or entire portfolio sells.</span></div><div><strong>21 days</strong><span>Standard auction period. This test version starts with one day.</span></div></div><p>With clear pricing instead of an open-ended assignment-fee model, you can see how much of the highest offer remains after MREO’s fee. Set your minimum; the required bid includes the $1,000 fee. Additional bid value belongs in your sale proceeds.</p><p class="field-note">Competitive bidding is designed to improve price discovery; the final price depends on buyer interest and property condition. Other closing costs and obligations are separate.</p><div class="form-actions"><a class="secondary-button" href="auction.html">Explore the auction protocol →</a></div></section></main>
+
+  <footer class="site-footer">
+    <p>
+      This is a demonstration prototype. It does not provide legal,
+      brokerage, appraisal, title, lending, or investment services.
+    </p>
+
+    <p>
+      &copy; <span id="current-year">2026</span> MREO
+    </p>
+  </footer>
+
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260914-blind-auction"></script>
+</body>
+</html>
