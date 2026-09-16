@@ -14,8 +14,14 @@ test("property detail connects buying and coordination",async({page})=>{
  await expect(page.locator(".coordination-card")).toHaveCount(4);
 });
 
-test("Turkey property offers coordination and preserves its property record",async({page})=>{
+test("Turkey property uses the standard hero, gallery, video, and coordination layout",async({page})=>{
  await page.goto("/turkey-property.html");
+ await expect(page.locator(".single-property-media img")).toHaveAttribute("src","assets/turkey/photos/videoframe_18959.webp");
+ await expect(page.getByRole("heading",{name:"Additional images",exact:true})).toBeVisible();
+ await expect(page.locator(".seller-media-grid figure")).toHaveCount(6);
+ await expect(page.locator('.seller-media-grid img[src*="videoframe_18959"]')).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Property videos",exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Watch the YouTube video"})).toHaveAttribute("href","https://www.youtube.com/watch?v=MUdBlpLWFEY");
  await page.getByRole("link",{name:"Coordinate This Property"}).click();
  await expect(page).toHaveURL(/coordination\.html\?/);
  await expect(page.locator("#coord-record-title")).toContainText("Address awaiting confirmation");
@@ -62,7 +68,7 @@ test("seller-created property listings are routed through the detail page",async
  await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
 });
 
-test("seller-created listing uses uploaded images and exposes all uploaded media",async({page})=>{
+test("seller-created listing uses one fixed hero, remaining images, and videos",async({page})=>{
  await page.goto("/seller.html");
  const created=await page.evaluate(async()=>{
   const submission={title:"77 Seller Media Way, Dallas, TX 75201",kind:"property",minimum:200000,days:1,portfolio:[],details:{propertyCity:"Dallas",propertyState:"TX",propertySize:"1800",propertyBedrooms:"3",propertyBathrooms:"2",propertyType:"Single-family home"}};
@@ -79,12 +85,15 @@ test("seller-created listing uses uploaded images and exposes all uploaded media
  await expect.poll(async()=>await row.locator(".property-thumbnail img").getAttribute("src")).toMatch(/^blob:/);
  await row.getByRole("link",{name:"View / Prepare Interest"}).click();
  expect(new URL(page.url()).searchParams.get("auction")).toBe(created.auctionId);
+ await expect(page.locator("#property-detail-image")).toHaveAttribute("src",/^blob:/);
  await expect(page.locator("#seller-media-section")).toBeVisible();
- await expect(page.locator("#seller-media-gallery img")).toHaveCount(2);
- await expect(page.locator("#seller-media-gallery video")).toHaveCount(1);
- await expect(page.locator("#seller-media-gallery")).toContainText("front.png");
- await expect(page.locator("#seller-media-gallery")).toContainText("back.jpg");
- await expect(page.locator("#seller-media-gallery")).toContainText("walkthrough.mp4");
+ await expect(page.locator("#seller-media-gallery img")).toHaveCount(1);
+ await expect(page.locator("#seller-media-gallery video")).toHaveCount(0);
+ await expect(page.locator("#property-videos-section")).toBeVisible();
+ await expect(page.locator("#property-video-gallery video")).toHaveCount(1);
+ await expect(page.locator("#property-video-gallery")).toContainText("walkthrough.mp4");
+ const galleryText=await page.locator("#seller-media-gallery").innerText();
+ expect([galleryText.includes("front.png"),galleryText.includes("back.jpg")].filter(Boolean)).toHaveLength(1);
  const interest=page.getByRole("link",{name:"Prepare Interest"});
  expect(new URL(await interest.getAttribute("href"),page.url()).searchParams.get("auction")).toBe(created.auctionId);
 });
