@@ -1,0 +1,55 @@
+name: Apply property media consistency
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - name: Stabilize seller listing hero selection
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          ui = Path('mreo-ui.js')
+          text = ui.read_text()
+          old = '''async function hydrateSellerThumbnails(container){
+ const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[Math.floor(Math.random()*photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
+}'''
+          new = '''function stableMediaIndex(key,count){
+ if(!count)return 0;let hash=2166136261;for(const ch of String(key||"")){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}return(hash>>>0)%count;
+}
+async function hydrateSellerThumbnails(container){
+ const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[stableMediaIndex(img.dataset.mediaKey,photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
+}'''
+          if old not in text:
+              raise SystemExit('Expected seller thumbnail function not found')
+          ui.write_text(text.replace(old,new,1))
+
+          props = Path('properties.html')
+          p = props.read_text()
+          p = p.replace('mreo-ui.js?v=20260914-blind-auction','mreo-ui.js?v=20260917-media')
+          p = p.replace('property-flow.js?v=20260916','property-flow.js?v=20260917-media')
+          props.write_text(p)
+          PY
+      - name: Run unit tests
+        run: npm test
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mreo-ui.js properties.html
+          git commit -m "Keep seller listing hero images consistent"
+          git push
