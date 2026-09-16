@@ -109,7 +109,7 @@ class Exchange{
  if(a.role==="buyer"){const auctionId=a.submission.auctionId;return json({auctionId:auctionId&&await this.ctx.storage.get("auction:"+auctionId)?auctionId:null});}
  if(a.submission.auctionId)return json({auctionId:a.submission.auctionId});
  const draft=a.submission;if(this.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")&&draft.days!==21)throw new HttpError("Use the 21-day standard duration for live auctions.");
- const id="auction-"+draft.draftId,auction=C.createAuction({id,title:draft.title,sellerId:a.id,minimum:draft.minimum,days:draft.days,kind:draft.kind,demo:false});
+ const id="auction-"+draft.draftId,auction=C.createAuction({id,title:draft.title,sellerId:a.id,minimum:draft.minimum,days:draft.days,kind:draft.kind,portfolioCount:draft.portfolio.length,demo:false});
  auction.example=false;auction.portfolioCount=draft.portfolio.length;
  await this.ctx.storage.put("auction:"+id,auction);if(draft.portfolio.length)await this.ctx.storage.put("portfolio:"+id,draft.portfolio);
  a.submission.auctionId=id;await this.ctx.storage.put("account:"+a.id,a);await this.schedule();return json({auctionId:id},201);

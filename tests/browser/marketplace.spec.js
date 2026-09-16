@@ -22,6 +22,11 @@ test("all pages load without script errors or horizontal overflow",async({page})
  expect(new URL(page.url()).searchParams.has("auction")).toBe(false);
  expect(errors).toEqual([]);
 });
+test("150-property portfolio shows a $150,000 success fee",async({page})=>{
+ await page.goto("/portfolio.html");
+ await expect(page.locator("#portfolio-fee")).toHaveText("$150,000");
+ await expect(page.locator("#portfolio-fee-note")).toHaveText("$1,000 × 150 properties");
+});
 test("buyer interest without an auction requires choosing a listing",async({page})=>{
  await page.goto("/buyer.html?address=Address%20awaiting%20confirmation%2C%20Turkey&price=7500000");
  await page.locator("#buyer-name").fill("Unlinked Buyer");

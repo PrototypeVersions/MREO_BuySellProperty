@@ -18,6 +18,11 @@ test("seller minimum includes the fee, and fees are not due at auction close",()
  assert.deepEqual(C.sellerSummary(a),{highest:270000,reserveMet:true,proceeds:269000,additional:19000,feeDue:0});
  a.saleCompleted=true;assert.equal(C.sellerSummary(a).feeDue,1000);
 });
+test("portfolio success fee is $1,000 per property",()=>{
+ const three=make({kind:"portfolio",portfolio:[{},{},{}]});assert.equal(three.fee,3000);assert.equal(three.reserve,253000);
+ const oneFifty=make({kind:"portfolio",portfolioCount:150});assert.equal(oneFifty.fee,150000);assert.equal(oneFifty.reserve,400000);
+ assert.equal(C.feeFor({kind:"portfolio",portfolioCount:150}),150000);
+});
 test("blind bids accept independent positive amounts while keeping participant checks",()=>{
  const a=make();const bid={buyerId:"a",amount:251000,paid:true,now:2000};
  assert.throws(()=>C.placeBid(a,{...bid,paid:false}),/participation/);

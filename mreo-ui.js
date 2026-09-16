@@ -13,9 +13,9 @@ function matrixTable(matrix,limit=5){return '<div class="table-scroll"><table cl
 function setupSeller(){
  if(!$("seller-form"))return;
  const toggle=()=>{const portfolio=$("sell-kind-portfolio").checked;$("portfolio-fields").hidden=!portfolio;$("portfolio-fields").disabled=!portfolio;$("single-fields").hidden=portfolio;$("single-fields").disabled=portfolio;$("single-search-panel").hidden=portfolio;document.querySelectorAll("#single-search-panel input, #single-search-panel button").forEach(el=>el.disabled=portfolio);$("property-information-heading").textContent=portfolio?"Portfolio information":"Property information";$("open-seller-contract").hidden=portfolio;};
- for(const id of ["sell-kind-property","sell-kind-portfolio"])$(id).addEventListener("change",toggle);
+ for(const id of ["sell-kind-property","sell-kind-portfolio"])$(id).addEventListener("change",()=>{toggle();fees();});
  if(params.get("kind")==="portfolio")$("sell-kind-portfolio").checked=true;toggle();
- const fees=()=>{try{const value=C.money(field("seller-minimum"));$("seller-fee-preview").textContent="Your required bid is "+cash(value+C.FEE)+": "+cash(value)+" to you after the "+cash(C.FEE)+" MREO fee, before other closing costs. The fee is due only if the sale closes.";}catch{$("seller-fee-preview").textContent="Set the minimum you want to receive after the MREO fee, before other closing costs.";}};$("seller-minimum").addEventListener("input",fees);fees();
+ const fees=()=>{const portfolio=$("sell-kind-portfolio").checked,count=portfolio?uploadedRows.length:1;if(portfolio&&!count){$("seller-fee-preview").textContent="Upload the portfolio spreadsheet to calculate the MREO fee at "+cash(C.FEE)+" per property.";return;}const fee=portfolio?C.feeFor({kind:"portfolio",portfolio:uploadedRows}):C.FEE;try{const value=C.money(field("seller-minimum"));$("seller-fee-preview").textContent="Your required bid is "+cash(value+fee)+": "+cash(value)+" to you after the "+cash(fee)+" MREO fee"+(portfolio?" ("+cash(C.FEE)+" × "+count+" properties)":"")+", before other closing costs. The fee is due only if the sale closes.";}catch{$("seller-fee-preview").textContent="Set the minimum you want to receive after the MREO fee, before other closing costs.";}};$("seller-minimum").addEventListener("input",fees);fees();
  let version=0;
  $("portfolio-file").addEventListener("change",()=>{
  const v=++version,input=$("portfolio-file"),file=input.files?.[0];uploadedRows=[];input.setCustomValidity("");$("portfolio-preview").innerHTML="";
@@ -31,7 +31,7 @@ function setupSeller(){
  if(!rows.length)throw Error("Add at least one property.");uploadedRows=rows;input.setCustomValidity("");
  const total=C.portfolioTotals(rows);
  $("portfolio-preview").innerHTML="<p><strong>"+rows.length+" properties ready.</strong> Reference value: "+cash(total.value)+". Example price at 7%: "+cash(total.price)+".</p>"+matrixTable(C.portfolioMatrix(rows).map(row=>row.slice(0,12)))+'<p class="field-note">Preview shows the first five properties. Every valid row is included in the portfolio. Set your own seller minimum below.</p>';
- message("portfolio-upload-message",rows.length+" properties imported successfully.");
+ message("portfolio-upload-message",rows.length+" properties imported successfully.");fees();
  })().catch(e=>{if(v===version){uploadedRows=[];input.setCustomValidity(e.message);message("portfolio-upload-message",e.message,true);}});});
 }
 async function submitSeller(){
@@ -76,9 +76,9 @@ async function portfolio(){
  try{
  if(id){const result=await S.auction(id);auction=result.auction;rows=auction.portfolio||[];if(!rows.length)throw Error("This listing does not contain a portfolio spreadsheet.");$("portfolio-title").textContent=auction.title;$("portfolio-data-label").textContent=auction.example?"Illustrative REO portfolio · Fictional data":"Seller-provided portfolio data";$("portfolio-source-note").textContent=auction.example?"Fictional example data. This is not an actual bank offer.":"Review the seller-provided information and arrange due diligence before purchasing."; }
  else{const res=await fetch("data/reo-sample.json");if(!res.ok)throw Error("The sample spreadsheet could not be loaded.");rows=await res.json();}
- const total=C.portfolioTotals(rows),listingId=auction?.id||"demo-portfolio";
- $("portfolio-count").textContent=String(rows.length);$("portfolio-value").textContent=cash(total.value);$("portfolio-price").textContent=cash(auction&&!auction.example?auction.reserve:total.price);
- if(auction&&!auction.example){$("portfolio-price-label").textContent="Required portfolio bid";$("portfolio-pricing-note").textContent="Seller minimum plus the $1,000 MREO fee";}
+ const total=C.portfolioTotals(rows),listingId=auction?.id||"demo-portfolio",portfolioFee=auction?.fee||C.feeFor({kind:"portfolio",portfolio:rows});
+ $("portfolio-count").textContent=String(rows.length);$("portfolio-value").textContent=cash(total.value);$("portfolio-price").textContent=cash(auction&&!auction.example?auction.reserve:total.price);$("portfolio-fee").textContent=cash(portfolioFee);$("portfolio-fee-note").textContent=cash(C.FEE)+" × "+rows.length+" properties";
+ if(auction&&!auction.example){$("portfolio-price-label").textContent="Required portfolio bid";$("portfolio-pricing-note").textContent="Seller minimum plus the "+cash(portfolioFee)+" MREO fee ("+cash(C.FEE)+" per property)";}
  const title=auction?.title||"Illustrative REO portfolio · 150 properties";
  $("portfolio-interest").href="buyer.html?auction="+encodeURIComponent(listingId)+"&address="+encodeURIComponent(title)+"&price="+Math.round(auction?.reserve||total.price);
  $("portfolio-auction").href="auction.html?id="+encodeURIComponent(listingId);

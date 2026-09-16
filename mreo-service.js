@@ -27,7 +27,7 @@ async function api(path,options={},role=currentRole()){
 }
 async function init(){
  if(!demo){const status=await api("/config");document.querySelectorAll("[data-mode-label]").forEach(el=>{el.textContent=status.testPayments?"Connected test mode · Stripe test payments · No real money":"Connected auctions · Payments verified through Stripe";});return;}
- const s=read();if(s.exampleCatalogVersion>=3)return;
+ const s=read();if(s.exampleCatalogVersion>=4)return;
  let rows=[];
  if(!s.auctions["demo-portfolio"]){
   const response=await fetch("data/reo-sample.json");if(!response.ok)throw Error("The example portfolio could not be loaded.");rows=await response.json();
@@ -35,10 +35,12 @@ async function init(){
  for(const [id,name,role] of [["test-buyer-a","Test Buyer A","buyer"],["test-buyer-b","Test Buyer B","buyer"],["test-buyer-c","Test Buyer C","buyer"],["test-seller","Test Seller","seller"]]){
   if(!s.accounts[id])s.accounts[id]={id,name,role,creditCents:100,test:true};
  }
+ const existingPortfolio=s.auctions["demo-portfolio"];
+ if(existingPortfolio?.example&&existingPortfolio.kind==="portfolio"&&existingPortfolio.portfolio?.length){const priorReserve=existingPortfolio.reserve,fee=C.feeFor({kind:"portfolio",portfolio:existingPortfolio.portfolio});existingPortfolio.fee=fee;existingPortfolio.minimum=Math.max(1,priorReserve-fee);existingPortfolio.reserve=existingPortfolio.minimum+fee;existingPortfolio.portfolioCount=existingPortfolio.portfolio.length;}
  const total=C.portfolioTotals(rows),now=Date.now()-31000;
  const examples=[
  {"id":"demo-property","title":"4218 Maple Ridge Drive, Dallas, TX 75229","minimum":350000},
- {id:"demo-portfolio",title:"Illustrative REO portfolio · 150 properties",minimum:Math.round(total.price)-C.FEE,kind:"portfolio",portfolio:rows},
+ {id:"demo-portfolio",title:"Illustrative REO portfolio · 150 properties",minimum:Math.round(total.price)-C.feeFor({kind:"portfolio",portfolio:rows}),kind:"portfolio",portfolio:rows},
  {"id":"demo-fort-worth","title":"7812 Oak Hollow Lane, Fort Worth, TX 76137","minimum":318000},
  {"id":"demo-plano","title":"2605 Preston Meadow Court, Plano, TX 75093","minimum":547000},
  {"id":"demo-irving","title":"1147 Riverside Terrace, Irving, TX 75062","minimum":428000},
@@ -66,7 +68,7 @@ async function init(){
  }
  // Retain any saved bids on the retired example without offering it for auction.
  if(s.auctions["video-property"])s.auctions["video-property"].hidden=true;
- s.exampleCatalogVersion=3;write(s);
+ s.exampleCatalogVersion=4;write(s);
 }
 async function register(role,details,submission){
  if(!["buyer","seller"].includes(role))throw Error("Choose a buyer or seller account.");

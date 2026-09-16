@@ -1,12 +1,18 @@
 (function coreModule(){
 "use strict";
 const FEE=1000,DAY=86400000,MAX=1e12;
+function feeFor({kind="property",portfolio=[],portfolioCount}={}){
+ const count=kind==="portfolio"?(Number.isSafeInteger(Number(portfolioCount))&&Number(portfolioCount)>0?Number(portfolioCount):Array.isArray(portfolio)?portfolio.length:0):1;
+ if(kind==="portfolio"&&count<1)throw Error("A portfolio auction needs at least one property.");
+ return FEE*count;
+}
 const money=v=>{const n=Number(String(v??"").replace(/[$,\s]/g,""));if(!Number.isSafeInteger(n)||n<0||n>MAX)throw Error("Enter a whole-dollar amount between $0 and $1 trillion.");return n;};
-function createAuction({id,title,sellerId,minimum,days=1,kind="property",portfolio=[],demo=false,now=Date.now()}){
+function createAuction({id,title,sellerId,minimum,days=1,kind="property",portfolio=[],portfolioCount,demo=false,now=Date.now()}){
  const net=money(minimum);if(net<1)throw Error("Set a seller minimum greater than zero.");
+ const fee=feeFor({kind,portfolio,portfolioCount});
  if(![1,21].includes(Number(days)))throw Error("Choose a 1-day test or 21-day auction.");
  if(!id||!sellerId||!String(title).trim())throw Error("An auction needs a listing and a seller.");
- return {id,title:String(title).trim().slice(0,300),sellerId,kind,portfolio,minimum:net,reserve:net+FEE,fee:FEE,startsAt:now,endsAt:now+Number(days)*DAY,days:Number(days),bids:[],status:"active",demo:!!demo,seeded:0,closedAt:null,winnerId:null,saleCompleted:false};
+ return {id,title:String(title).trim().slice(0,300),sellerId,kind,portfolio,portfolioCount:kind==="portfolio"?(Number(portfolioCount)||portfolio.length):0,minimum:net,reserve:net+fee,fee,startsAt:now,endsAt:now+Number(days)*DAY,days:Number(days),bids:[],status:"active",demo:!!demo,seeded:0,closedAt:null,winnerId:null,saleCompleted:false};
 }
 // Stable sorting preserves receipt order when equal bids share a timestamp.
 function highest(a){return [...a.bids].sort((x,y)=>y.amount-x.amount||x.at-y.at)[0]||null;}
@@ -80,5 +86,5 @@ function normalizePortfolio(matrix){
 function portfolioTotals(rows){return rows.reduce((s,r)=>({count:s.count+1,value:s.value+r.value,price:Math.round((s.value+r.value)*7)/100,repairs:s.repairs+r.repairs,balance:s.balance+r.balance}),{count:0,value:0,price:0,repairs:0,balance:0});}
 function portfolioMatrix(rows){return [COLUMNS,...rows.map(r=>[r.id,r.address,r.city,r.state,r.zip,r.type,r.beds,r.baths,r.sqft,r.occupancy,r.condition,r.value,r.balance,r.repairs,r.taxes,r.hoa,r.title,r.allocation,r.notes])];}
 function csv(rows){return rows.map(row=>row.map(v=>{let s=String(v??"");if(typeof v==="string"&&/^[\s]*[=+\-@]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}).join(",")).join("\r\n");}
-globalThis.MreoCore={FEE,DAY,money,createAuction,highest,closeAuction,placeBid,seedDemo,outcome,auctionForViewer,sellerSummary,parseCSV,normalizePortfolio,portfolioTotals,portfolioMatrix,csv,COLUMNS};
+globalThis.MreoCore={FEE,DAY,money,feeFor,createAuction,highest,closeAuction,placeBid,seedDemo,outcome,auctionForViewer,sellerSummary,parseCSV,normalizePortfolio,portfolioTotals,portfolioMatrix,csv,COLUMNS};
 })();
