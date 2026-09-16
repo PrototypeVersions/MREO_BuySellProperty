@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Coordinate title, contractors, realtors, and rental workflows around an MREO property record.">
+  <title>Coordinate Property | MREO</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="marketplace.css?v=20260914-blind-auction">
+  <link rel="stylesheet" href="coordination.css?v=20260916">
+</head>
+<body class="coordination-page">
+  <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
+  <div class="protocol-strip" data-mode-label></div>
+  <main class="page-shell">
+    <a class="back-link" href="index.html"><span aria-hidden="true">←</span> MREO home</a>
+    <section class="coordination-hero">
+      <div>
+        <p class="section-label">MREO · Coordination Network</p>
+        <h1>Coordinate the property.</h1>
+        <p>Keep the transaction and the work that follows it connected to one property record. MREO can coordinate the provider handoffs, documents, requests, bids, and status while independent professionals perform the underlying services.</p>
+        <div class="form-actions"><a class="secondary-button" id="coord-choose-property" href="properties.html">Choose an available property →</a></div>
+      </div>
+      <aside class="record-card" aria-label="Selected property record">
+        <img id="coord-record-image" alt="" hidden>
+        <p class="record-eyebrow">Property record</p>
+        <h2 id="coord-record-title">No property selected</h2>
+        <p id="coord-record-meta">Choose a property to attach this coordination workflow.</p>
+        <span class="record-status" id="coord-record-status">No property selected</span>
+      </aside>
+    </section>
+
+    <section aria-labelledby="lifecycle-heading">
+      <p class="section-label">Property lifecycle</p>
+      <h2 id="lifecycle-heading">One record from acquisition through operation</h2>
+      <div class="lifecycle" aria-label="MREO property lifecycle">
+        <div><span>01</span><strong>Acquire</strong></div>
+        <div class="is-current"><span>02</span><strong>Transfer</strong></div>
+        <div><span>03</span><strong>Improve</strong></div>
+        <div><span>04</span><strong>Represent</strong></div>
+        <div><span>05</span><strong>Rent / Manage</strong></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="coordination-services-heading">
+      <p class="section-label">Four coordination pathways</p>
+      <h2 id="coordination-services-heading">Choose what this property needs next</h2>
+      <div class="coordination-grid" id="coordination-grid">
+        <a class="coordination-card" data-service="title" href="coordination-service.html?service=title"><span class="coordination-number">01 · TRANSFER</span><h2>Title Transfer</h2><p>Coordinate title and settlement providers, documents, title review, requirements, and closing status.</p><span class="service-status">Not started</span><span class="card-action">Open title workflow →</span></a>
+        <a class="coordination-card" data-service="contractors" href="coordination-service.html?service=contractors"><span class="coordination-number">02 · IMPROVE</span><h2>Contractors</h2><p>Create a work package, request contractor quotes, compare scope and timing, and coordinate the selected provider.</p><span class="service-status">Not started</span><span class="card-action">Open contractor workflow →</span></a>
+        <a class="coordination-card" data-service="realtors" href="coordination-service.html?service=realtors"><span class="coordination-number">03 · REPRESENT</span><h2>Realtors</h2><p>Request licensed local representation, showings, valuation assistance, leasing help, or transaction support.</p><span class="service-status">Not started</span><span class="card-action">Open realtor workflow →</span></a>
+        <a class="coordination-card" data-service="rentals" href="coordination-service.html?service=rentals"><span class="coordination-number">04 · RENT / MANAGE</span><h2>Property Rentals</h2><p>Prepare a property for rent, find a tenant, coordinate the lease and move-in, and connect ongoing management.</p><span class="service-status">Not started</span><span class="card-action">Open rental workflow →</span></a>
+      </div>
+    </section>
+
+    <aside class="coordination-note"><strong>MREO coordinates the workflow.</strong><p>MREO is presented here as infrastructure for connecting a property record to participating professionals and service providers. Title, brokerage, contracting, property-management, legal, and other regulated services remain the responsibility of the applicable independent provider.</p></aside>
+  </main>
+  <footer class="site-footer"><p>MREO connects property transactions to the people and services needed to complete and operate them.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260914-blind-auction"></script><script src="coordination.js?v=20260916"></script>
+</body>
+</html>
