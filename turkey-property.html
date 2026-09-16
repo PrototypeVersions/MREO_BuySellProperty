@@ -7,6 +7,21 @@
   <title>Turkey Property | MREO</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="marketplace.css?v=20260914-blind-auction">
+  <style>
+    .turkey-property-actions > a {
+      box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 300px;
+      min-height: 70px;
+    }
+    @media (max-width: 600px) {
+      .turkey-property-actions > a {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body class="property-detail-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -78,7 +93,7 @@
     <section class="property-interest-panel" aria-labelledby="property-interest-heading">
       <h2 id="property-interest-heading">Interested in this property?</h2>
       <p>Prepare your buyer information and proposed offer.</p>
-      <div class="form-actions">
+      <div class="form-actions turkey-property-actions">
         <a class="primary-button button-blue" id="turkey-prepare-interest"
           href="buyer.html?address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000">Prepare Interest <span aria-hidden="true">→</span></a>
         <a class="secondary-button" id="turkey-coordinate" href="coordination.html?type=property&amp;address=Address%20awaiting%20confirmation%2C%20Turkey&amp;price=7500000&amp;image=assets%2Fturkey%2Fphotos%2Fvideoframe_18959.webp">Coordinate This Property <span aria-hidden="true">→</span></a>
