@@ -284,11 +284,11 @@ test("portfolio spreadsheet filters and actual Excel upload create a complete li
  await page.locator("#payment-submit").click();
  await expect(page).toHaveURL(/auction.html/);
  await expect(page.locator("#auction-title")).toHaveText("Uploaded REO Portfolio");
- await expect(page.locator("#seller-reserve")).toHaveText("$4,804,450");
+ await expect(page.locator("#seller-reserve")).toHaveText("$4,953,450");
  await page.locator("#test-controls summary").click();
  await page.locator("#test-actor").selectOption("test-seller");
  await expect(page.locator("#seller-private")).toBeVisible();
- await expect(page.locator("#seller-reserve")).toHaveText("$4,804,450");
+ await expect(page.locator("#seller-reserve")).toHaveText("$4,953,450");
  await expect(page.locator("#bid-history-title")).toHaveText("All associated bids");
  await page.goto("/properties.html");
  await expect(page.locator(".portfolio-entry")).toHaveCount(0);
@@ -330,7 +330,7 @@ test("all sample auctions migrate without losing saved Grapevine interest, credi
  await expect(page.locator('#auction-select option[value="video-property"]')).toHaveCount(0);
  await expect(page.locator('#auction-select option[value="saved-property"]')).toHaveText("Seller's saved property");
  const after=await page.evaluate(()=>JSON.parse(localStorage.getItem(window.MreoService.key)));
- expect(after.exampleCatalogVersion).toBe(3);
+ expect(after.exampleCatalogVersion).toBe(4);
  for(const [id,auction] of Object.entries(before.existing)){
   expect(after.auctions[id].bids).toEqual(auction.bids);
   expect(after.auctions[id].endsAt).toEqual(auction.endsAt);
