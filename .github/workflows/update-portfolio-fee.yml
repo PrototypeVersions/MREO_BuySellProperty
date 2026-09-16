@@ -1,0 +1,125 @@
+name: Update portfolio fee
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply per-property portfolio fee
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text()
+              found = text.count(old)
+              if found < count:
+                  raise SystemExit(f"Expected at least {count} occurrence(s) in {path}, found {found}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, count))
+
+          # Core fee model: $1,000 per single property, or $1,000 times portfolio property count.
+          replace("auction-core.js",
+              'const FEE=1000,DAY=86400000,MAX=1e12;',
+              'const FEE=1000,DAY=86400000,MAX=1e12;\nfunction feeFor({kind="property",portfolio=[],portfolioCount}={}){\n const count=kind==="portfolio"?(Number.isSafeInteger(Number(portfolioCount))&&Number(portfolioCount)>0?Number(portfolioCount):Array.isArray(portfolio)?portfolio.length:0):1;\n if(kind==="portfolio"&&count<1)throw Error("A portfolio auction needs at least one property.");\n return FEE*count;\n}')
+          replace("auction-core.js",
+              'function createAuction({id,title,sellerId,minimum,days=1,kind="property",portfolio=[],demo=false,now=Date.now()}){\n const net=money(minimum);if(net<1)throw Error("Set a seller minimum greater than zero.");',
+              'function createAuction({id,title,sellerId,minimum,days=1,kind="property",portfolio=[],portfolioCount,demo=false,now=Date.now()}){\n const net=money(minimum);if(net<1)throw Error("Set a seller minimum greater than zero.");\n const fee=feeFor({kind,portfolio,portfolioCount});')
+          replace("auction-core.js",
+              'return {id,title:String(title).trim().slice(0,300),sellerId,kind,portfolio,minimum:net,reserve:net+FEE,fee:FEE,startsAt:now,endsAt:now+Number(days)*DAY,days:Number(days),bids:[],status:"active",demo:!!demo,seeded:0,closedAt:null,winnerId:null,saleCompleted:false};',
+              'return {id,title:String(title).trim().slice(0,300),sellerId,kind,portfolio,portfolioCount:kind==="portfolio"?(Number(portfolioCount)||portfolio.length):0,minimum:net,reserve:net+fee,fee,startsAt:now,endsAt:now+Number(days)*DAY,days:Number(days),bids:[],status:"active",demo:!!demo,seeded:0,closedAt:null,winnerId:null,saleCompleted:false};')
+          replace("auction-core.js",
+              'globalThis.MreoCore={FEE,DAY,money,createAuction,highest,closeAuction,placeBid,seedDemo,outcome,auctionForViewer,sellerSummary,parseCSV,normalizePortfolio,portfolioTotals,portfolioMatrix,csv,COLUMNS};',
+              'globalThis.MreoCore={FEE,DAY,money,feeFor,createAuction,highest,closeAuction,placeBid,seedDemo,outcome,auctionForViewer,sellerSummary,parseCSV,normalizePortfolio,portfolioTotals,portfolioMatrix,csv,COLUMNS};')
+
+          # Demo portfolio and existing browser-state migration.
+          replace("mreo-service.js", 'if(s.exampleCatalogVersion>=3)return;', 'if(s.exampleCatalogVersion>=4)return;')
+          replace("mreo-service.js",
+              'const total=C.portfolioTotals(rows),now=Date.now()-31000;',
+              'const existingPortfolio=s.auctions["demo-portfolio"];\n if(existingPortfolio?.example&&existingPortfolio.kind==="portfolio"&&existingPortfolio.portfolio?.length){const priorReserve=existingPortfolio.reserve,fee=C.feeFor({kind:"portfolio",portfolio:existingPortfolio.portfolio});existingPortfolio.fee=fee;existingPortfolio.minimum=Math.max(1,priorReserve-fee);existingPortfolio.reserve=existingPortfolio.minimum+fee;existingPortfolio.portfolioCount=existingPortfolio.portfolio.length;}\n const total=C.portfolioTotals(rows),now=Date.now()-31000;')
+          replace("mreo-service.js",
+              '{id:"demo-portfolio",title:"Illustrative REO portfolio · 150 properties",minimum:Math.round(total.price)-C.FEE,kind:"portfolio",portfolio:rows},',
+              '{id:"demo-portfolio",title:"Illustrative REO portfolio · 150 properties",minimum:Math.round(total.price)-C.feeFor({kind:"portfolio",portfolio:rows}),kind:"portfolio",portfolio:rows},')
+          replace("mreo-service.js", 's.exampleCatalogVersion=3;write(s);', 's.exampleCatalogVersion=4;write(s);')
+
+          # Connected backend passes the portfolio count into the same core fee calculation.
+          replace("backend/worker.js",
+              'const id="auction-"+draft.draftId,auction=C.createAuction({id,title:draft.title,sellerId:a.id,minimum:draft.minimum,days:draft.days,kind:draft.kind,demo:false});',
+              'const id="auction-"+draft.draftId,auction=C.createAuction({id,title:draft.title,sellerId:a.id,minimum:draft.minimum,days:draft.days,kind:draft.kind,portfolioCount:draft.portfolio.length,demo:false});')
+
+          # Seller fee preview becomes dynamic for portfolios.
+          replace("mreo-ui.js",
+              'for(const id of ["sell-kind-property","sell-kind-portfolio"])$(id).addEventListener("change",toggle);',
+              'for(const id of ["sell-kind-property","sell-kind-portfolio"])$(id).addEventListener("change",()=>{toggle();fees();});')
+          replace("mreo-ui.js",
+              'const fees=()=>{try{const value=C.money(field("seller-minimum"));$("seller-fee-preview").textContent="Your required bid is "+cash(value+C.FEE)+": "+cash(value)+" to you after the "+cash(C.FEE)+" MREO fee, before other closing costs. The fee is due only if the sale closes.";}catch{$("seller-fee-preview").textContent="Set the minimum you want to receive after the MREO fee, before other closing costs.";}};$("seller-minimum").addEventListener("input",fees);fees();',
+              'const fees=()=>{const portfolio=$("sell-kind-portfolio").checked,count=portfolio?uploadedRows.length:1;if(portfolio&&!count){$("seller-fee-preview").textContent="Upload the portfolio spreadsheet to calculate the MREO fee at "+cash(C.FEE)+" per property.";return;}const fee=portfolio?C.feeFor({kind:"portfolio",portfolio:uploadedRows}):C.FEE;try{const value=C.money(field("seller-minimum"));$("seller-fee-preview").textContent="Your required bid is "+cash(value+fee)+": "+cash(value)+" to you after the "+cash(fee)+" MREO fee"+(portfolio?" ("+cash(C.FEE)+" × "+count+" properties)":"")+", before other closing costs. The fee is due only if the sale closes.";}catch{$("seller-fee-preview").textContent="Set the minimum you want to receive after the MREO fee, before other closing costs.";}};$("seller-minimum").addEventListener("input",fees);fees();')
+          replace("mreo-ui.js",
+              'message("portfolio-upload-message",rows.length+" properties imported successfully.");',
+              'message("portfolio-upload-message",rows.length+" properties imported successfully.");fees();')
+          replace("mreo-ui.js",
+              'const total=C.portfolioTotals(rows),listingId=auction?.id||"demo-portfolio";',
+              'const total=C.portfolioTotals(rows),listingId=auction?.id||"demo-portfolio",portfolioFee=auction?.fee||C.feeFor({kind:"portfolio",portfolio:rows});')
+          replace("mreo-ui.js",
+              '$("portfolio-count").textContent=String(rows.length);$("portfolio-value").textContent=cash(total.value);$("portfolio-price").textContent=cash(auction&&!auction.example?auction.reserve:total.price);',
+              '$("portfolio-count").textContent=String(rows.length);$("portfolio-value").textContent=cash(total.value);$("portfolio-price").textContent=cash(auction&&!auction.example?auction.reserve:total.price);$("portfolio-fee").textContent=cash(portfolioFee);$("portfolio-fee-note").textContent=cash(C.FEE)+" × "+rows.length+" properties";')
+          replace("mreo-ui.js",
+              '$("portfolio-pricing-note").textContent="Seller minimum plus the $1,000 MREO fee";',
+              '$("portfolio-pricing-note").textContent="Seller minimum plus the "+cash(portfolioFee)+" MREO fee ("+cash(C.FEE)+" per property)";')
+
+          # Make the fee visible on the portfolio page itself.
+          replace("portfolio.html",
+              '<div class="auction-stats portfolio-stats"><div><span>Properties</span><strong id="portfolio-count">150</strong><small>One portfolio sale</small></div><div><span>Aggregate reference value</span><strong id="portfolio-value">—</strong><small>Sum of spreadsheet reference values</small></div><div><span id="portfolio-price-label">Portfolio asking price · 7%</span><strong id="portfolio-price">—</strong><small id="portfolio-pricing-note">7 cents per $1 of reference value</small></div></div>',
+              '<div class="auction-stats portfolio-stats"><div><span>Properties</span><strong id="portfolio-count">150</strong><small>One portfolio sale</small></div><div><span>Aggregate reference value</span><strong id="portfolio-value">—</strong><small>Sum of spreadsheet reference values</small></div><div><span id="portfolio-price-label">Portfolio asking price · 7%</span><strong id="portfolio-price">—</strong><small id="portfolio-pricing-note">7 cents per $1 of reference value</small></div><div><span>MREO success fee</span><strong id="portfolio-fee">$150,000</strong><small id="portfolio-fee-note">$1,000 × 150 properties</small></div></div>')
+
+          # Clarify marketing copy on the seller page.
+          replace("seller.html",
+              '<div><strong>$1,000</strong><span>One MREO success fee, only if your property or entire portfolio sells.</span></div>',
+              '<div><strong>$1,000</strong><span>Success fee per property, only if the sale closes. A 150-property portfolio has a $150,000 fee.</span></div>')
+          replace("seller.html",
+              'Set your minimum; the required bid includes the $1,000 fee. Additional bid value belongs in your sale proceeds.',
+              'Set your minimum; the required bid includes a $1,000 fee for a single property or $1,000 per property in a portfolio. Additional bid value belongs in your sale proceeds.')
+
+          # Regression tests for the calculation and displayed sample fee.
+          p=Path("tests/core.test.mjs")
+          text=p.read_text()
+          anchor='test("blind bids accept independent positive amounts while keeping participant checks",()=>{'
+          addition='test("portfolio success fee is $1,000 per property",()=>{\n const three=make({kind:"portfolio",portfolio:[{},{},{}]});assert.equal(three.fee,3000);assert.equal(three.reserve,253000);\n const oneFifty=make({kind:"portfolio",portfolioCount:150});assert.equal(oneFifty.fee,150000);assert.equal(oneFifty.reserve,400000);\n assert.equal(C.feeFor({kind:"portfolio",portfolioCount:150}),150000);\n});\n'
+          if addition not in text:
+              if anchor not in text: raise SystemExit("core test insertion anchor not found")
+              p.write_text(text.replace(anchor,addition+anchor,1))
+
+          p=Path("tests/browser/marketplace.spec.js")
+          text=p.read_text()
+          anchor='test("buyer interest without an auction requires choosing a listing",async({page})=>{'
+          addition='test("150-property portfolio shows a $150,000 success fee",async({page})=>{\n await page.goto("/portfolio.html");\n await expect(page.locator("#portfolio-fee")).toHaveText("$150,000");\n await expect(page.locator("#portfolio-fee-note")).toHaveText("$1,000 × 150 properties");\n});\n'
+          if addition not in text:
+              if anchor not in text: raise SystemExit("browser test insertion anchor not found")
+              p.write_text(text.replace(anchor,addition+anchor,1))
+
+          print("Updated files. Remaining fee references:")
+          for path in ["seller.html","portfolio.html","mreo-ui.js","auction-core.js","mreo-service.js","backend/worker.js"]:
+              for i,line in enumerate(Path(path).read_text().splitlines(),1):
+                  if "$1,000" in line or "C.FEE" in line or "feeFor" in line:
+                      print(f"{path}:{i}: {line[:300]}")
+          PY
+      - name: Run unit tests
+        run: npm test
+      - name: Commit changes
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add auction-core.js mreo-service.js mreo-ui.js backend/worker.js portfolio.html seller.html tests/core.test.mjs tests/browser/marketplace.spec.js
+          git commit -m "Charge $1,000 per property for portfolio sales"
+          git push origin HEAD:main
