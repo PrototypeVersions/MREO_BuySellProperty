@@ -11,13 +11,42 @@
     return Number.isFinite(amount) && amount > 0 ? String(Math.round(amount)) : "";
   }
 
+  function stableMediaIndex(key, count) {
+    if (!count) return 0;
+    let hash = 2166136261;
+    for (const ch of String(key || "")) {
+      hash ^= ch.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) % count;
+  }
+
+  async function hydrateSellerRow(row) {
+    const imageEl = row.querySelector("img[data-media-key]");
+    const mediaKey = imageEl?.dataset.mediaKey;
+    if (!imageEl || !mediaKey || !globalThis.MreoService?.getMedia) return;
+    try {
+      const media = await globalThis.MreoService.getMedia(mediaKey);
+      const photos = media.filter((item) => (item.type || "").startsWith("image/") && item.blob);
+      if (!photos.length) return;
+      const chosen = photos[stableMediaIndex(mediaKey, photos.length)];
+      imageEl.src = URL.createObjectURL(chosen.blob);
+      imageEl.alt = "Seller-provided property photograph";
+    } catch {}
+  }
+
   function buildDetailLink(row) {
-    const link = row.querySelector('.property-action a[href^="buyer.html?"], .property-action a[href^="auction.html?id="]');
+    const link = row.querySelector('.property-action a[href^="buyer.html?"], .property-action a[href^="auction.html?id="], .property-action a[href^="property.html?"]');
     if (!link) return;
+
+    const originalHref = link.getAttribute("href") || "";
+    if (originalHref.startsWith("property.html?")) {
+      hydrateSellerRow(row);
+      return;
+    }
 
     const source = new URL(link.href, location.href);
     const detail = new URL("property.html", location.href);
-    const originalHref = link.getAttribute("href") || "";
 
     if (originalHref.startsWith("buyer.html?")) {
       ["auction", "address", "price"].forEach((key) => {
@@ -32,6 +61,7 @@
     }
 
     const image = row.querySelector(".property-thumbnail img")?.getAttribute("src") || "";
+    const mediaKey = row.querySelector(".property-thumbnail img")?.dataset.mediaKey || "";
     const locationLabel = text(".property-location", row);
     let description = text(".property-description", row);
     if (!description) {
@@ -40,6 +70,7 @@
         .find((value) => value && value !== locationLabel) || "";
     }
     if (image) detail.searchParams.set("image", image);
+    if (mediaKey) detail.searchParams.set("mediaKey", mediaKey);
     if (description) detail.searchParams.set("description", description);
     if (locationLabel) detail.searchParams.set("location", locationLabel);
 
@@ -60,6 +91,7 @@
     link.href = detail.pathname.split("/").pop() + detail.search;
     link.textContent = "View / Prepare Interest";
     link.classList.add("button-blue");
+    if (mediaKey) hydrateSellerRow(row);
   }
 
   function buildDetailLinks(root = document) {
@@ -96,35 +128,70 @@
     return out;
   }
 
-  async function loadSellerMedia(mediaKey,address) {
-  if (!mediaKey || !globalThis.MreoService?.getMedia) return;
-  const media = await globalThis.MreoService.getMedia(mediaKey);
-  if (!media.length) return;
-  const section = document.getElementById("seller-media-section");
-  const gallery = document.getElementById("seller-media-gallery");
-  if (!section || !gallery) return;
-  gallery.innerHTML = "";
-  const photos = media.filter(item => (item.type || "").startsWith("image/") && item.blob);
-  if (photos.length) {
-    const main = document.getElementById("property-detail-image");
-    const chosen = photos[Math.floor(Math.random() * photos.length)];
-    main.src = URL.createObjectURL(chosen.blob);
-    main.alt = "Seller-provided property photograph for " + address;
-    main.closest(".single-property-media").hidden = false;
-  }
-  media.forEach((item,index) => {
-    if (!item.blob) return;
+  function addImageFigure(gallery, item, index) {
     const figure = document.createElement("figure");
-    const url = URL.createObjectURL(item.blob);
-    if ((item.type || "").startsWith("image/")) {
-      const img = document.createElement("img"); img.src = url; img.alt = item.name || ("Property photograph " + (index + 1)); img.loading = "lazy"; figure.appendChild(img);
-    } else if ((item.type || "").startsWith("video/")) {
-      const video = document.createElement("video"); video.src = url; video.controls = true; video.preload = "metadata"; video.setAttribute("playsinline", ""); video.setAttribute("aria-label", item.name || ("Property video " + (index + 1))); figure.appendChild(video);
-    } else return;
-    const caption = document.createElement("figcaption"); caption.textContent = item.name || ("Seller media " + (index + 1)); figure.appendChild(caption); gallery.appendChild(figure);
-  });
-  section.hidden = gallery.children.length === 0;
-}
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(item.blob);
+    img.alt = item.name || ("Property photograph " + (index + 1));
+    img.loading = "lazy";
+    figure.appendChild(img);
+    const caption = document.createElement("figcaption");
+    caption.textContent = item.name || ("Property photograph " + (index + 1));
+    figure.appendChild(caption);
+    gallery.appendChild(figure);
+  }
+
+  function addVideoFigure(gallery, item, index) {
+    const figure = document.createElement("figure");
+    const video = document.createElement("video");
+    video.src = URL.createObjectURL(item.blob);
+    video.controls = true;
+    video.preload = "metadata";
+    video.setAttribute("playsinline", "");
+    video.setAttribute("aria-label", item.name || ("Property video " + (index + 1)));
+    figure.appendChild(video);
+    const caption = document.createElement("figcaption");
+    caption.textContent = item.name || ("Property video " + (index + 1));
+    figure.appendChild(caption);
+    gallery.appendChild(figure);
+  }
+
+  async function loadSellerMedia(mediaKey, address) {
+    if (!mediaKey || !globalThis.MreoService?.getMedia) return;
+    const media = await globalThis.MreoService.getMedia(mediaKey);
+    if (!media.length) return;
+
+    const photos = media.filter((item) => (item.type || "").startsWith("image/") && item.blob);
+    const videos = media.filter((item) => (item.type || "").startsWith("video/") && item.blob);
+    const imageSection = document.getElementById("seller-media-section");
+    const imageGallery = document.getElementById("seller-media-gallery");
+    const videoSection = document.getElementById("property-videos-section");
+    const videoGallery = document.getElementById("property-video-gallery");
+    const main = document.getElementById("property-detail-image");
+
+    let hero = null;
+    if (photos.length && main) {
+      hero = photos[stableMediaIndex(mediaKey, photos.length)];
+      main.src = URL.createObjectURL(hero.blob);
+      main.alt = "Seller-provided property photograph for " + address;
+      main.closest(".single-property-media").hidden = false;
+    }
+
+    if (imageGallery && imageSection) {
+      imageGallery.innerHTML = "";
+      photos.forEach((item, index) => {
+        if (item === hero) return;
+        addImageFigure(imageGallery, item, index);
+      });
+      imageSection.hidden = imageGallery.children.length === 0;
+    }
+
+    if (videoGallery && videoSection) {
+      videoGallery.innerHTML = "";
+      videos.forEach((item, index) => addVideoFigure(videoGallery, item, index));
+      videoSection.hidden = videoGallery.children.length === 0;
+    }
+  }
 
   function populateDetailPage() {
     const title = document.getElementById("property-detail-address");
@@ -167,6 +234,7 @@
     });
     document.getElementById("property-prepare-interest").href = "buyer.html?" + buyer.toString();
     document.getElementById("property-coordinate").href = "coordination.html?" + contextQuery().toString();
+
     const mediaKey = params.get("mediaKey");
     if (mediaKey) loadSellerMedia(mediaKey, address).catch(() => {});
   }
