@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   patch:
-    if: github.actor != 'github-actions[bot]'
+    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -22,22 +22,21 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-
           ui = Path('mreo-ui.js')
           text = ui.read_text()
-          old = '''async function hydrateSellerThumbnails(container){
- const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[Math.floor(Math.random()*photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
-}'''
-          new = '''function stableMediaIndex(key,count){
- if(!count)return 0;let hash=2166136261;for(const ch of String(key||"")){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}return(hash>>>0)%count;
-}
-async function hydrateSellerThumbnails(container){
- const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[stableMediaIndex(img.dataset.mediaKey,photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
-}'''
-          if old not in text:
-              raise SystemExit('Expected seller thumbnail function not found')
-          ui.write_text(text.replace(old,new,1))
-
+          marker = 'async function hydrateSellerThumbnails(container){'
+          helper = 'function stableMediaIndex(key,count){\n if(!count)return 0;let hash=2166136261;for(const ch of String(key||"")){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}return(hash>>>0)%count;\n}\n'
+          if 'function stableMediaIndex(key,count)' not in text:
+              if marker not in text:
+                  raise SystemExit('Seller thumbnail function not found')
+              text = text.replace(marker, helper + marker, 1)
+          old = 'const chosen=photos[Math.floor(Math.random()*photos.length)]'
+          new = 'const chosen=photos[stableMediaIndex(img.dataset.mediaKey,photos.length)]'
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit('Seller thumbnail selection expression not found')
+          ui.write_text(text)
           props = Path('properties.html')
           p = props.read_text()
           p = p.replace('mreo-ui.js?v=20260914-blind-auction','mreo-ui.js?v=20260917-media')
@@ -51,5 +50,9 @@ async function hydrateSellerThumbnails(container){
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add mreo-ui.js properties.html
-          git commit -m "Keep seller listing hero images consistent"
-          git push
+          if git diff --cached --quiet; then
+            echo "No media consistency changes needed"
+          else
+            git commit -m "Keep seller listing hero images consistent"
+            git push
+          fi
