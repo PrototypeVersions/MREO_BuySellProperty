@@ -5,37 +5,53 @@
   const text = (sel, root = document) => (qs(sel, root)?.textContent || "").replace(/\s+/g, " ").trim();
   const params = new URLSearchParams(location.search);
 
-  function buildDetailLinks() {
-    document.querySelectorAll(".property-row").forEach((row) => {
-      const link = row.querySelector('.property-action a[href^="buyer.html?"]');
-      if (!link) return;
+  function buildDetailLink(row) {
+    const link = row.querySelector('.property-action a[href^="buyer.html?"]');
+    if (!link) return;
 
-      const buyer = new URL(link.href, location.href);
-      const detail = new URL("property.html", location.href);
-      ["auction", "address", "price"].forEach((key) => {
-        const value = buyer.searchParams.get(key);
-        if (value) detail.searchParams.set(key, value);
-      });
-
-      const image = row.querySelector(".property-thumbnail img")?.getAttribute("src") || "";
-      const description = text(".property-description", row);
-      const locationLabel = text(".property-location", row);
-      if (image) detail.searchParams.set("image", image);
-      if (description) detail.searchParams.set("description", description);
-      if (locationLabel) detail.searchParams.set("location", locationLabel);
-
-      row.querySelectorAll(".property-facts > div").forEach((fact) => {
-        const label = text(".property-fact-label", fact).toLowerCase();
-        const value = text("strong", fact);
-        if (!value) return;
-        if (label.includes("size")) detail.searchParams.set("size", value);
-        else if (label.includes("beds")) detail.searchParams.set("bedsBaths", value);
-        else if (label.includes("condition")) detail.searchParams.set("condition", value);
-        else if (label.includes("type")) detail.searchParams.set("type", value);
-      });
-
-      link.href = detail.pathname.split("/").pop() + detail.search;
+    const buyer = new URL(link.href, location.href);
+    const detail = new URL("property.html", location.href);
+    ["auction", "address", "price"].forEach((key) => {
+      const value = buyer.searchParams.get(key);
+      if (value) detail.searchParams.set(key, value);
     });
+
+    const image = row.querySelector(".property-thumbnail img")?.getAttribute("src") || "";
+    const description = text(".property-description", row);
+    const locationLabel = text(".property-location", row);
+    if (image) detail.searchParams.set("image", image);
+    if (description) detail.searchParams.set("description", description);
+    if (locationLabel) detail.searchParams.set("location", locationLabel);
+
+    row.querySelectorAll(".property-facts > div").forEach((fact) => {
+      const label = text(".property-fact-label", fact).toLowerCase();
+      const value = text("strong", fact);
+      if (!value) return;
+      if (label.includes("size")) detail.searchParams.set("size", value);
+      else if (label.includes("beds")) detail.searchParams.set("bedsBaths", value);
+      else if (label.includes("condition")) detail.searchParams.set("condition", value);
+      else if (label.includes("type")) detail.searchParams.set("type", value);
+    });
+
+    link.href = detail.pathname.split("/").pop() + detail.search;
+  }
+
+  function buildDetailLinks(root = document) {
+    if (root.matches?.(".property-row")) buildDetailLink(root);
+    root.querySelectorAll?.(".property-row").forEach(buildDetailLink);
+  }
+
+  function watchForNewListings() {
+    const marketplace = document.querySelector(".property-marketplace");
+    if (!marketplace) return;
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        for (const node of record.addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) buildDetailLinks(node);
+        }
+      }
+    });
+    observer.observe(marketplace, {childList:true, subtree:true});
   }
 
   function safeImage(value) {
@@ -97,6 +113,9 @@
     document.getElementById("property-coordinate").href = "coordination.html?" + contextQuery().toString();
   }
 
-  if (document.body.classList.contains("properties-page")) buildDetailLinks();
+  if (document.body.classList.contains("properties-page")) {
+    buildDetailLinks();
+    watchForNewListings();
+  }
   populateDetailPage();
 })();
