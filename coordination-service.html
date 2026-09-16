@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="MREO property coordination workflow.">
+  <title>MREO Coordination</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="marketplace.css?v=20260914-blind-auction">
+  <link rel="stylesheet" href="coordination.css?v=20260916">
+</head>
+<body class="coordination-service-page">
+  <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
+  <div class="protocol-strip" data-mode-label></div>
+  <main class="page-shell">
+    <a class="back-link" id="service-back" href="coordination.html"><span aria-hidden="true">←</span> Coordination Network</a>
+    <section class="coordination-hero">
+      <div>
+        <p class="section-label" id="service-eyebrow">Coordinate</p>
+        <h1 id="service-title">Coordination workflow</h1>
+        <p id="service-intro">Coordinate services around the selected property record.</p>
+      </div>
+      <aside class="record-card" aria-label="Selected property record">
+        <img id="service-record-image" alt="" hidden>
+        <p class="record-eyebrow">Property record</p>
+        <h2 id="service-record-title">No property selected</h2>
+        <p id="service-record-meta">Choose a property to attach this coordination workflow.</p>
+        <span class="record-status" id="service-record-status">No property selected</span>
+      </aside>
+    </section>
+
+    <div class="service-layout">
+      <section class="workflow-panel" aria-labelledby="workflow-title">
+        <p class="section-label">MREO workflow</p>
+        <h2 id="workflow-title">Coordination steps</h2>
+        <ol class="workflow-list" id="service-workflow"></ol>
+      </section>
+      <section class="request-panel" aria-labelledby="request-title">
+        <p class="section-label">Start coordination</p>
+        <h2 id="request-title">Create the request</h2>
+        <form class="service-request-form" id="service-request-form">
+          <div id="service-form-fields"></div>
+          <button class="primary-button button-blue" id="service-submit" type="submit">Start coordination</button>
+        </form>
+        <div class="coordination-success" id="service-message" role="status" hidden></div>
+        <div class="provider-preview" id="provider-preview"></div>
+      </section>
+    </div>
+
+    <aside class="coordination-note"><strong>Coordination, not substitution.</strong><p>The prototype keeps requests, providers, status, and the property record connected. The underlying title, brokerage, construction, leasing, property-management, legal, and other services are performed by the applicable independent provider.</p></aside>
+  </main>
+  <footer class="site-footer"><p>MREO coordinates property workflows and provider handoffs around a shared property record.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260914-blind-auction"></script><script src="coordination.js?v=20260916"></script>
+</body>
+</html>
