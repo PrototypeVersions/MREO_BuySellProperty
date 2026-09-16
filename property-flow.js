@@ -5,20 +5,40 @@
   const text = (sel, root = document) => (qs(sel, root)?.textContent || "").replace(/\s+/g, " ").trim();
   const params = new URLSearchParams(location.search);
 
+  function parseMoney(value) {
+    const numeric = String(value || "").replace(/[^0-9.-]/g, "");
+    const amount = Number(numeric);
+    return Number.isFinite(amount) && amount > 0 ? String(Math.round(amount)) : "";
+  }
+
   function buildDetailLink(row) {
-    const link = row.querySelector('.property-action a[href^="buyer.html?"]');
+    const link = row.querySelector('.property-action a[href^="buyer.html?"], .property-action a[href^="auction.html?id="]');
     if (!link) return;
 
-    const buyer = new URL(link.href, location.href);
+    const source = new URL(link.href, location.href);
     const detail = new URL("property.html", location.href);
-    ["auction", "address", "price"].forEach((key) => {
-      const value = buyer.searchParams.get(key);
-      if (value) detail.searchParams.set(key, value);
-    });
+    const originalHref = link.getAttribute("href") || "";
+
+    if (originalHref.startsWith("buyer.html?")) {
+      ["auction", "address", "price"].forEach((key) => {
+        const value = source.searchParams.get(key);
+        if (value) detail.searchParams.set(key, value);
+      });
+    } else {
+      const auctionId = source.searchParams.get("id");
+      const address = text("h2", row);
+      if (auctionId) detail.searchParams.set("auction", auctionId);
+      if (address) detail.searchParams.set("address", address);
+    }
 
     const image = row.querySelector(".property-thumbnail img")?.getAttribute("src") || "";
-    const description = text(".property-description", row);
     const locationLabel = text(".property-location", row);
+    let description = text(".property-description", row);
+    if (!description) {
+      description = [...row.querySelectorAll(".property-main-info p")]
+        .map((p) => (p.textContent || "").replace(/\s+/g, " ").trim())
+        .find((value) => value && value !== locationLabel) || "";
+    }
     if (image) detail.searchParams.set("image", image);
     if (description) detail.searchParams.set("description", description);
     if (locationLabel) detail.searchParams.set("location", locationLabel);
@@ -31,9 +51,15 @@
       else if (label.includes("beds")) detail.searchParams.set("bedsBaths", value);
       else if (label.includes("condition")) detail.searchParams.set("condition", value);
       else if (label.includes("type")) detail.searchParams.set("type", value);
+      else if ((label.includes("price") || label.includes("required bid")) && !detail.searchParams.has("price")) {
+        const amount = parseMoney(value);
+        if (amount) detail.searchParams.set("price", amount);
+      }
     });
 
     link.href = detail.pathname.split("/").pop() + detail.search;
+    link.textContent = "View / Prepare Interest";
+    link.classList.add("button-blue");
   }
 
   function buildDetailLinks(root = document) {
