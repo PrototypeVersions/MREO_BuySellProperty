@@ -26,7 +26,7 @@ jobs:
       - name: Mirror source into destination
         shell: bash
         run: |
-          rsync -a --delete --exclude='.git/' --exclude='source/' source/ ./
+          rsync -a --delete --exclude='.git/' --exclude='source/' --exclude='.github/workflows/' source/ ./
           rm -rf source
 
       - name: Commit copied snapshot
@@ -36,7 +36,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
-            echo "Destination already matches source."
+            echo "Destination already matches source except for the workflow copied separately."
             exit 0
           fi
           git commit -m "Copy MREO_BuySell into MREO_BuySellProperty"
