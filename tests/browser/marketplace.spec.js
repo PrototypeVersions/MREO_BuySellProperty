@@ -1,7 +1,7 @@
 import {test,expect} from "@playwright/test";
 test("all pages load without script errors or horizontal overflow",async({page})=>{
  const errors=[];page.on("pageerror",e=>errors.push(e.message));
- for(const path of ["index.html","buyer.html","seller.html","properties.html","turkey-property.html","portfolios.html","portfolio.html","auction.html","payment.html"]){
+ for(const path of ["index.html","buyer.html","seller.html","properties.html","turkey-property.html","portfolios.html","portfolio.html","auction.html","payment.html","property.html","coordination.html","coordination-service.html?service=title"]){
   await page.goto("/"+path);
   await expect(page.locator("[data-mode-label]")).toContainText("Test mode");
   await expect.poll(()=>page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
@@ -56,7 +56,7 @@ test("buyer interest without an auction requires choosing a listing",async({page
 test("every sample property opens its own auction through buyer participation",async({page})=>{
  test.setTimeout(120000);
  await page.goto("/properties.html");
- const listings=await page.locator('.property-marketplace a[href^="buyer.html?"]').evaluateAll(links=>links.map(link=>{
+ const listings=await page.locator('.property-marketplace a[href^="property.html?"]').evaluateAll(links=>links.map(link=>{
   const params=new URL(link.href).searchParams;
   return {id:params.get("auction"),address:params.get("address")};
  }));
@@ -67,8 +67,12 @@ test("every sample property opens its own auction through buyer participation",a
  for(const [index,{address,id}] of listings.entries()){
   await test.step(address,async()=>{
    await page.goto("/properties.html");
-   await page.locator('.property-marketplace a[href^="buyer.html?auction='+id+'&"]').click();
+   await page.locator('.property-marketplace a[href^="property.html?auction='+id+'&"]').click();
    expect(new URL(page.url()).searchParams.get("auction")).toBe(id);
+   await expect(page).toHaveURL(/property\.html\?/);
+   await expect(page.locator("#property-detail-address")).toHaveText(address);
+   await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
+   await page.getByRole("link",{name:"Prepare Interest",exact:true}).click();
    await expect(page.locator("#buyer-offer-address")).toHaveValue(address);
    await page.locator("#buyer-name").fill("Property Buyer");
    await page.locator("#buyer-email").fill("property-buyer@example.com");
