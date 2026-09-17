@@ -22,3 +22,5 @@ jobs:
           git add coordination.css
           git commit -m "Align coordination workspace stat values"
           git push
+
+# one-time alignment patch
