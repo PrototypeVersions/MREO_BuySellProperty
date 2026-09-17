@@ -100,8 +100,11 @@ async function portfolio(){
 function sellerDetailHref(a){
  const d=a.details||{},q=new URLSearchParams();q.set("auction",a.id);q.set("address",a.title);q.set("price",String(a.reserve||""));q.set("image","assets/property-placeholder.svg");q.set("location",[d.propertyCity,d.propertyState].filter(Boolean).join(", ")||(S.demo?"Your test listing":"Seller listing"));q.set("description",d.propertyConditionNotes||d.propertyDescription||"Seller-provided as-is property listing.");if(d.propertySize)q.set("size",d.propertySize+" sq ft");if(d.propertyBedrooms||d.propertyBathrooms)q.set("bedsBaths",[d.propertyBedrooms||"NA",d.propertyBathrooms||"NA"].join(" / "));if(d.propertyType)q.set("type",d.propertyType);if(a.mediaKey)q.set("mediaKey",a.mediaKey);return "property.html?"+q.toString();
 }
+function stableMediaIndex(key,count){
+ if(!count)return 0;let hash=2166136261;for(const ch of String(key||"")){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}return(hash>>>0)%count;
+}
 async function hydrateSellerThumbnails(container){
- const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[Math.floor(Math.random()*photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
+ const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[stableMediaIndex(img.dataset.mediaKey,photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
 }
 function marketplace(){
  const container=$("new-listings");if(!container)return;
