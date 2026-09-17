@@ -4,7 +4,7 @@ const C=globalThis.MreoCore,S=globalThis.MreoService,$=id=>document.getElementBy
 const params=new URLSearchParams(location.search);
 const cash=v=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(v||0);
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let uploadedRows=[],uploadPromise=null,xlsxPromise=null,readyPromise=Promise.resolve();
+let uploadedRows=[],selectedMediaFiles=[],uploadPromise=null,xlsxPromise=null,readyPromise=Promise.resolve();
 const field=id=>$(id)?.value.trim()||"";
 function message(id,text,error=false){const el=$(id);if(!el)return;el.textContent=text;el.hidden=false;el.classList.toggle("error-message",error);el.classList.toggle("success-message",!error);}
 async function busy(button,fn){if(button.disabled)return;button.disabled=true;const original=button.textContent;button.textContent="Please wait…";try{return await fn();}finally{button.disabled=false;button.textContent=original;}}
@@ -12,6 +12,26 @@ function loadXLSX(){if(window.XLSX)return Promise.resolve(window.XLSX);if(xlsxPr
 function matrixTable(matrix,limit=5){return '<div class="table-scroll"><table class="data-table"><thead><tr>'+matrix[0].map(h=>"<th>"+esc(h)+"</th>").join("")+"</tr></thead><tbody>"+matrix.slice(1,limit+1).map(row=>"<tr>"+row.map(cell=>"<td>"+esc(cell)+"</td>").join("")+"</tr>").join("")+"</tbody></table></div>";}
 function setupSeller(){
  if(!$("seller-form"))return;
+ const mediaInput=$("property-media");
+ if(mediaInput){
+  const uploadArea=mediaInput.closest(".upload-area"),note=uploadArea?.querySelector(".upload-note");
+  const renderMediaSelection=()=>{
+   if(!note)return;
+   if(!selectedMediaFiles.length){note.textContent="You can select multiple files. If you choose more files later, they will be added to this list.";return;}
+   const names=selectedMediaFiles.map(file=>file.name).join(", ");
+   note.textContent=selectedMediaFiles.length+" file"+(selectedMediaFiles.length===1?"":"s")+" selected: "+names+". Choose more files to add them.";
+  };
+  mediaInput.addEventListener("change",()=>{
+   const incoming=[...(mediaInput.files||[])];
+   const seen=new Set(selectedMediaFiles.map(file=>[file.name,file.size,file.lastModified,file.type].join("|")));
+   for(const file of incoming){
+    const key=[file.name,file.size,file.lastModified,file.type].join("|");
+    if(!seen.has(key)){selectedMediaFiles.push(file);seen.add(key);}
+   }
+   renderMediaSelection();
+  });
+  renderMediaSelection();
+ }
  const toggle=()=>{const portfolio=$("sell-kind-portfolio").checked;$("portfolio-fields").hidden=!portfolio;$("portfolio-fields").disabled=!portfolio;$("single-fields").hidden=portfolio;$("single-fields").disabled=portfolio;$("single-search-panel").hidden=portfolio;document.querySelectorAll("#single-search-panel input, #single-search-panel button").forEach(el=>el.disabled=portfolio);$("property-information-heading").textContent=portfolio?"Portfolio information":"Property information";$("open-seller-contract").hidden=portfolio;};
  for(const id of ["sell-kind-property","sell-kind-portfolio"])$(id).addEventListener("change",()=>{toggle();fees();});
  if(params.get("kind")==="portfolio")$("sell-kind-portfolio").checked=true;toggle();
@@ -43,7 +63,7 @@ async function submitSeller(){
  const title=portfolio?field("portfolio-title"):[field("property-address"),field("property-city"),field("property-state")+" "+field("property-zip")].filter(Boolean).join(", ");
  const submission={title,kind:portfolio?"portfolio":"property",minimum:C.money(field("seller-minimum")),days:Number(field("auction-days")),portfolio:portfolio?uploadedRows:[],details:Object.fromEntries([...new FormData(form)].filter(([,v])=>typeof v==="string"))};
  const account=await S.register("seller",{name:field("seller-name"),email:field("seller-email")},submission);
- const mediaFiles=$("property-media")?.files;if(!portfolio&&mediaFiles?.length&&account?.submission?.draftId)await S.saveMedia(account.submission.draftId,mediaFiles);
+ const mediaFiles=selectedMediaFiles;if(!portfolio&&mediaFiles.length&&account?.submission?.draftId)await S.saveMedia(account.submission.draftId,mediaFiles);
  location.href="payment.html?role=seller";
 }
 async function submitBuyer(){
