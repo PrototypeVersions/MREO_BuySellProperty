@@ -51,13 +51,17 @@ test("coordination request is the same object across buyer and service partner v
  await expect(page.locator("#provider-request-summary")).toContainText("$30,000");
  await page.getByRole("button",{name:"Accept request"}).click();
  await expect(page.locator("#provider-status-pill")).toHaveText("Provider reviewing");
- await page.getByRole("button",{name:"Send provider response"}).click();
- await expect(page.locator("#provider-status-pill")).toHaveText("Proposal ready");
-
+ await page.getByRole("link",{name:"Prepare provider response →"}).click();
+ await expect(page).toHaveURL(/coordination-response\.html\?/);
+ await expect(page.locator('input[name="totalPrice"]')).toHaveValue("$28,400");
+ await expect(page.locator('textarea[name="lineItems"]')).toContainText("Flooring");
+ await page.getByRole("button",{name:"Send response to client"}).click();
  await page.getByRole("button",{name:"Buyer",exact:true}).click();
- await expect(page.locator("#client-status-pill")).toHaveText("Proposal ready");
- await expect(page.locator("#client-status-copy")).toContainText("$28,400");
- await page.getByRole("button",{name:"Approve provider response"}).click();
+ await expect(page.getByRole("heading",{name:"Review provider response"})).toBeVisible();
+ await expect(page.locator("#client-response-details")).toContainText("$28,400");
+ await expect(page.locator("#client-response-details")).toContainText("24 calendar days");
+ await page.getByRole("button",{name:"Approve response"}).click();
+ await expect(page).toHaveURL(/coordination-service\.html\?/);
  await expect(page.locator("#client-status-pill")).toHaveText("Approved");
 
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
@@ -66,6 +70,37 @@ test("coordination request is the same object across buyer and service partner v
  await page.getByRole("button",{name:"Mark complete"}).click();
  await expect(page.locator("#provider-status-pill")).toHaveText("Complete");
  await expect(page.locator("#service-document-library")).toContainText("Construction completion");
+});
+
+
+test("client can request provider-response changes and provider can revise the same response",async({page})=>{
+ const base="/coordination.html?type=property&auction=coord-response-revision&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
+ await page.goto(base);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-response-revision"));
+ await page.reload();
+ await page.locator('[data-service="rentals"]').click();
+ await page.locator("#service-submit").click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Accept request"}).click();
+ await page.getByRole("link",{name:"Prepare provider response →"}).click();
+ await expect(page.locator('input[name="managementFee"]')).toHaveValue(/8%/);
+ await page.locator('input[name="managementFee"]').fill("7% of collected monthly rent — revised demonstration term");
+ await page.getByRole("button",{name:"Send response to client"}).click();
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#client-response-details")).toContainText("7% of collected monthly rent");
+ await page.getByRole("button",{name:"Request changes"}).click();
+ await page.locator("#revision-request-note").fill("Please reduce the routine maintenance authority threshold.");
+ await page.getByRole("button",{name:"Send change request"}).click();
+ await expect(page).toHaveURL(/coordination-service\\.html\\?/);
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.getByRole("link",{name:"Revise provider response →"})).toBeVisible();
+ await page.getByRole("link",{name:"Revise provider response →"}).click();
+ await expect(page.locator(".response-revision-banner")).toContainText("reduce the routine maintenance authority threshold");
+ await page.locator('input[name="maintenanceAuthority"]').fill("Up to $250 per incident without additional owner approval — revised demonstration term");
+ await page.getByRole("button",{name:"Send revised response to client"}).click();
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#response-version")).toHaveText("Revision 2");
+ await expect(page.locator("#client-response-details")).toContainText("$250 per incident");
 });
 
 test("all four coordination pathways can be submitted and appear in the provider inbox",async({page})=>{
@@ -111,9 +146,13 @@ test("title workflow requires buyer closing participation",async({page})=>{
  await page.locator("#service-submit").click();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await page.getByRole("button",{name:"Accept request"}).click();
- await page.getByRole("button",{name:"Send provider response"}).click();
+ await page.getByRole("link",{name:"Prepare provider response →"}).click();
+ await expect(page.locator('input[name="totalCharges"]')).toHaveValue("$2,150");
+ await expect(page.locator('textarea[name="requirements"]')).toContainText("Confirm legal name and vesting");
+ await page.getByRole("button",{name:"Send response to client"}).click();
  await page.getByRole("button",{name:"Buyer",exact:true}).click();
- await page.getByRole("button",{name:"Approve provider response"}).click();
+ await expect(page.locator("#client-response-details")).toContainText("Preliminary title findings");
+ await page.getByRole("button",{name:"Approve response"}).click();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await page.getByRole("button",{name:"Start work"}).click();
  await expect(page.getByRole("button",{name:"Waiting for buyer closing confirmation"})).toBeDisabled();

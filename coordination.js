@@ -362,7 +362,7 @@ Property: ${context.label}
       if (request.status === "submitted" && elapsed > 12000) {
         transition(serviceKey, "matched", "Service Partner", `${services[serviceKey].provider} automatically accepted the demonstration request.`); changed = true;
       } else if (request.status === "matched" && elapsed > 18000) {
-        transition(serviceKey, "proposal", "Service Partner", `${services[serviceKey].provider} automatically returned a demonstration proposal / engagement package.`); changed = true;
+        // Wait for the Service Partner to prepare and send the provider response.
       } else if (request.status === "approved" && elapsed > 15000) {
         transition(serviceKey, "in-progress", "Service Partner", `${services[serviceKey].provider} began the approved demonstration work.`); changed = true;
       } else if (request.status === "in-progress" && elapsed > 25000 && (serviceKey !== "title" || request.clientClosingConfirmed)) {
