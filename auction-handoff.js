@@ -84,6 +84,16 @@
       return;
     }
 
+    /*
+      Do not make a second auction request while the main UI is loading or
+      switching active listings. The handoff matters only after close, and
+      this guard keeps it from racing the primary auction renderer.
+    */
+    if (($("auction-status")?.textContent || "").trim() !== "Closed") {
+      hideHandoff(container);
+      return;
+    }
+
     const view = currentView();
     const actor = $("test-actor")?.value || undefined;
     try {
@@ -126,6 +136,5 @@
   [$("auction-result"), $("seller-private")].filter(Boolean).forEach((element) => observer.observe(element, {subtree:true, childList:true, attributes:true, characterData:true}));
   [$("auction-select"), $("test-actor")].filter(Boolean).forEach((element) => element.addEventListener("change", refreshHandoff));
   [$("view-buyer"), $("view-seller"), $("finish-auction"), $("complete-sale")].filter(Boolean).forEach((element) => element.addEventListener("click", () => setTimeout(refreshHandoff, 80)));
-  setInterval(refreshHandoff, 2000);
   refreshHandoff();
 })();
