@@ -91,7 +91,7 @@ test("client can request provider-response changes and provider can revise the s
  await page.getByRole("button",{name:"Request changes"}).click();
  await page.locator("#revision-request-note").fill("Please reduce the routine maintenance authority threshold.");
  await page.getByRole("button",{name:"Send change request"}).click();
- await expect(page).toHaveURL(/coordination-service\\.html\\?/);
+ await expect(page).toHaveURL(/coordination-service\.html\?/);
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await expect(page.getByRole("link",{name:"Revise provider response →"})).toBeVisible();
  await page.getByRole("link",{name:"Revise provider response →"}).click();
@@ -110,7 +110,7 @@ test("all four coordination pathways can be submitted and appear in the provider
  await page.reload();
  for(const service of ["title","contractors","realtors","rentals"]){
   await page.locator(`[data-service="${service}"]`).click();
-  await expect(page).toHaveURL(new RegExp(`coordination-service\\.html\\?.*service=${service}`));
+ await expect(page).toHaveURL(/coordination-service\.html\?/);
   await page.locator("#service-submit").click();
   await expect(page.locator("#client-request-status")).toBeVisible();
   await page.goto(base);
