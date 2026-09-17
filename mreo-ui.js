@@ -15,19 +15,56 @@ function setupSeller(){
  const mediaInput=$("property-media");
  if(mediaInput){
   const uploadArea=mediaInput.closest(".upload-area"),note=uploadArea?.querySelector(".upload-note");
+  mediaInput.classList.add("seller-media-native-input");
+  mediaInput.setAttribute("aria-label","Add photos or videos");
+  const picker=document.createElement("div");
+  picker.className="seller-media-picker";
+  picker.innerHTML='<div class="seller-media-picker-toolbar"><button type="button" class="primary-button button-blue seller-media-add">Add photos or videos</button><span class="seller-media-count" aria-live="polite">No files selected</span></div><div class="seller-media-preview-grid" hidden></div>';
+  mediaInput.insertAdjacentElement("afterend",picker);
+  const addButton=picker.querySelector(".seller-media-add"),countLabel=picker.querySelector(".seller-media-count"),grid=picker.querySelector(".seller-media-preview-grid");
+  let previewUrls=[];
+  const keyFor=file=>[file.name,file.size,file.lastModified,file.type].join("|");
+  const clearPreviewUrls=()=>{previewUrls.forEach(url=>URL.revokeObjectURL(url));previewUrls=[];};
   const renderMediaSelection=()=>{
-   if(!note)return;
-   if(!selectedMediaFiles.length){note.textContent="You can select multiple files. If you choose more files later, they will be added to this list.";return;}
-   const names=selectedMediaFiles.map(file=>file.name).join(", ");
-   note.textContent=selectedMediaFiles.length+" file"+(selectedMediaFiles.length===1?"":"s")+" selected: "+names+". Choose more files to add them.";
+   clearPreviewUrls();grid.innerHTML="";
+   const imageCount=selectedMediaFiles.filter(file=>(file.type||"").startsWith("image/")).length;
+   const videoCount=selectedMediaFiles.filter(file=>(file.type||"").startsWith("video/")).length;
+   if(!selectedMediaFiles.length){
+    countLabel.textContent="No files selected";
+    grid.hidden=true;
+    if(note)note.textContent="Add photos or videos. You can add more files in separate selections.";
+    return;
+   }
+   countLabel.textContent=selectedMediaFiles.length+" file"+(selectedMediaFiles.length===1?"":"s")+" selected · "+imageCount+" image"+(imageCount===1?"":"s")+" · "+videoCount+" video"+(videoCount===1?"":"s");
+   if(note)note.textContent="Choose Add photos or videos again to add more. Remove any item you do not want to submit.";
+   selectedMediaFiles.forEach((file,index)=>{
+    const card=document.createElement("article");
+    card.className="seller-media-preview-card";
+    const visual=document.createElement("div");
+    visual.className="seller-media-preview-visual";
+    if((file.type||"").startsWith("image/")){
+     const img=document.createElement("img"),url=URL.createObjectURL(file);previewUrls.push(url);img.src=url;img.alt="Preview of "+file.name;visual.appendChild(img);
+    }else{
+     visual.classList.add("seller-media-video-thumb");
+     visual.innerHTML='<span class="seller-media-play" aria-hidden="true">▶</span><span>VIDEO</span>';
+    }
+    const meta=document.createElement("div");
+    meta.className="seller-media-preview-meta";
+    const name=document.createElement("span");
+    name.className="seller-media-preview-name";name.textContent=file.name;name.title=file.name;
+    const remove=document.createElement("button");
+    remove.type="button";remove.className="seller-media-remove";remove.textContent="Remove";remove.setAttribute("aria-label","Remove "+file.name);
+    remove.addEventListener("click",()=>{selectedMediaFiles.splice(index,1);renderMediaSelection();});
+    meta.append(name,remove);card.append(visual,meta);grid.appendChild(card);
+   });
+   grid.hidden=false;
   };
+  addButton.addEventListener("click",()=>{mediaInput.value="";mediaInput.click();});
   mediaInput.addEventListener("change",()=>{
    const incoming=[...(mediaInput.files||[])];
-   const seen=new Set(selectedMediaFiles.map(file=>[file.name,file.size,file.lastModified,file.type].join("|")));
-   for(const file of incoming){
-    const key=[file.name,file.size,file.lastModified,file.type].join("|");
-    if(!seen.has(key)){selectedMediaFiles.push(file);seen.add(key);}
-   }
+   const seen=new Set(selectedMediaFiles.map(keyFor));
+   for(const file of incoming){const key=keyFor(file);if(!seen.has(key)){selectedMediaFiles.push(file);seen.add(key);}}
+   mediaInput.value="";
    renderMediaSelection();
   });
   renderMediaSelection();
