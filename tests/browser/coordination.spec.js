@@ -12,6 +12,9 @@ test("property detail connects buying and coordination",async({page})=>{
  await expect(page).toHaveURL(/coordination\.html\?/);
  await expect(page.locator("#coord-record-title")).toContainText("4218 Maple Ridge Drive");
  await expect(page.locator(".coordination-card")).toHaveCount(4);
+ await expect(page.getByRole("button",{name:"Buyer",exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Seller",exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Service Partner",exact:true})).toBeVisible();
 });
 
 test("Turkey property uses the standard hero, gallery, video, and coordination layout",async({page})=>{
@@ -28,19 +31,71 @@ test("Turkey property uses the standard hero, gallery, video, and coordination l
  await expect(page.locator("#coord-record-meta")).toContainText("$7,500,000");
 });
 
-test("each coordination pathway can start a property-linked request",async({page})=>{
- const base="/coordination.html?type=property&auction=demo-property&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
+test("coordination request is the same object across buyer and service partner views",async({page})=>{
+ const base="/coordination.html?type=property&auction=coord-cross-role&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
  await page.goto(base);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v2:coord-cross-role"));
+ await page.reload();
+ await page.locator('[data-service="contractors"]').click();
+ await expect(page).toHaveURL(/service=contractors/);
+ await expect(page.locator("#service-record-title")).toContainText("4218 Maple Ridge Drive");
+ await expect(page.locator("#service-submit")).toBeVisible();
+ await page.locator("#service-submit").click();
+ await expect(page.locator("#client-request-status")).toBeVisible();
+ await expect(page.locator("#client-status-pill")).toHaveText("Submitted");
+ await expect(page.locator("#client-request-summary")).toContainText("$30,000");
+
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-service-panel")).toBeVisible();
+ await expect(page.locator("#provider-request-detail")).toBeVisible();
+ await expect(page.locator("#provider-request-summary")).toContainText("$30,000");
+ await page.getByRole("button",{name:"Accept request"}).click();
+ await expect(page.locator("#provider-status-pill")).toHaveText("Provider reviewing");
+ await page.getByRole("button",{name:"Send provider response"}).click();
+ await expect(page.locator("#provider-status-pill")).toHaveText("Proposal ready");
+
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#client-status-pill")).toHaveText("Proposal ready");
+ await expect(page.locator("#client-status-copy")).toContainText("$28,400");
+ await page.getByRole("button",{name:"Approve provider response"}).click();
+ await expect(page.locator("#client-status-pill")).toHaveText("Approved");
+
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Start work"}).click();
+ await expect(page.locator("#provider-status-pill")).toHaveText("In progress");
+ await page.getByRole("button",{name:"Mark complete"}).click();
+ await expect(page.locator("#provider-status-pill")).toHaveText("Complete");
+ await expect(page.locator("#service-document-library")).toContainText("Construction completion");
+});
+
+test("all four coordination pathways can be submitted and appear in the provider inbox",async({page})=>{
+ const base="/coordination.html?type=property&auction=coord-all-paths&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
+ await page.goto(base);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v2:coord-all-paths"));
+ await page.reload();
  for(const service of ["title","contractors","realtors","rentals"]){
-  const card=page.locator(`[data-service="${service}"]`);
-  await card.click();
+  await page.locator(`[data-service="${service}"]`).click();
   await expect(page).toHaveURL(new RegExp(`coordination-service\\.html\\?.*service=${service}`));
-  await expect(page.locator("#service-record-title")).toContainText("4218 Maple Ridge Drive");
   await page.locator("#service-submit").click();
-  await expect(page.locator("#service-message")).toContainText("Coordination request created");
+  await expect(page.locator("#client-request-status")).toBeVisible();
   await page.goto(base);
-  await expect(page.locator(`[data-service="${service}"] .service-status`)).toHaveText("Request started");
+  await expect(page.locator(`[data-service="${service}"] .service-status`)).not.toHaveText("Not started");
  }
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-queue .provider-job")).toHaveCount(4);
+ await expect(page.locator("#provider-inbox-count")).toHaveText("4");
+});
+
+test("coordination workspace includes downloadable property documents and seller perspective",async({page})=>{
+ await page.goto("/coordination.html?auction=coord-docs&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000");
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v2:coord-docs"));
+ await page.reload();
+ await expect(page.locator("#coord-document-library .document-item")).toHaveCount(5);
+ await expect(page.getByRole("button",{name:"Download acquisition package"})).toBeVisible();
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#role-workspace-title")).toContainText("Closing, transfer");
+ await expect(page.getByRole("button",{name:"Download seller closing package"})).toBeVisible();
+ await expect(page.locator("#acquisition-details")).toContainText("Winning buyer");
 });
 
 test("seller-created property listings are routed through the detail page",async({page})=>{
