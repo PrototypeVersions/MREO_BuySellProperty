@@ -3,12 +3,14 @@ import {test,expect} from "@playwright/test";
 test("completed auction hands seller and winning buyer into the same property workspace",async({page})=>{
  await page.goto("/auction.html?id=demo-property&view=seller");
  await expect(page.locator("#test-controls")).toBeVisible();
+ await page.locator("#test-controls summary").click();
  await page.locator("#test-actor").selectOption("test-seller");
  await page.getByRole("button",{name:"Advance to result"}).click();
  await expect(page.locator("#auction-result")).toContainText("Highest offer at close");
  await expect(page.getByRole("button",{name:"Simulate completed sale"})).toBeVisible();
  await page.getByRole("button",{name:"Simulate completed sale"}).click();
 
+ await expect(page.getByRole("button",{name:"Download seller closing package"})).toBeVisible();
  const sellerWorkspace=page.getByRole("link",{name:"Open seller closing workspace →"});
  await expect(sellerWorkspace).toBeVisible();
  const sellerHref=new URL(await sellerWorkspace.getAttribute("href"),page.url());
@@ -19,6 +21,7 @@ test("completed auction hands seller and winning buyer into the same property wo
  await page.getByRole("button",{name:"Buyer view"}).click();
  await page.locator("#test-actor").selectOption("test-buyer-c");
  await expect(page.locator("#auction-result")).toContainText("Your bid won");
+ await expect(page.getByRole("button",{name:"Download acquisition package"})).toBeVisible();
  const buyerWorkspace=page.getByRole("link",{name:"Open acquired-property workspace →"});
  await expect(buyerWorkspace).toBeVisible();
  const buyerHref=new URL(await buyerWorkspace.getAttribute("href"),page.url());
