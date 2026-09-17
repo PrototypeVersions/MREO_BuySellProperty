@@ -7,7 +7,7 @@
   <title>Property Coordination Workspace | MREO</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
-  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v2">
+  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v3">
 </head>
 <body class="coordination-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -59,11 +59,11 @@
       <div class="role-intro-grid">
         <div>
           <h2 id="role-workspace-title">Your acquired property, ready for what comes next.</h2>
-          <p id="role-workspace-copy">Download the acquisition package, start any coordination pathway, review provider responses, approve work, and keep every resulting document attached to the property record.</p>
+          <p id="role-workspace-copy">Start the next required workflow, review provider responses, approve work, and keep the underlying property information connected automatically.</p>
         </div>
         <div class="workspace-stats" aria-label="Workspace status">
           <div><span>Active requests</span><strong id="coord-stat-open">0</strong></div>
-          <div><span>Documents</span><strong id="coord-stat-docs">6</strong></div>
+          <div><span>Connected records</span><strong id="coord-stat-docs">3</strong></div>
           <div><span>Completed services</span><strong id="coord-stat-complete">0</strong></div>
         </div>
       </div>
@@ -74,15 +74,15 @@
         <article class="workspace-panel acquisition-panel" aria-labelledby="acquisition-heading">
           <p class="section-label" id="acquisition-eyebrow">Acquisition complete</p>
           <h2 id="acquisition-heading">4218 Maple Ridge is now in your MREO workspace.</h2>
-          <p id="acquisition-copy">The fictional auction and purchase handoff are complete. The core acquisition files are available below and the same property record can now feed every coordination request.</p>
+          <p id="acquisition-copy">The property record carries the transaction information into the next workflow automatically.</p>
           <dl class="workspace-details" id="acquisition-details"></dl>
-          <div class="form-actions"><button type="button" class="primary-button button-blue" id="download-acquisition-package">Download acquisition package</button></div>
+          <div class="form-actions"><a class="primary-button button-blue" id="acquisition-primary-action" href="coordination-service.html?service=title">Start closing / title transfer →</a></div>
         </article>
 
         <article class="workspace-panel" aria-labelledby="workspace-documents-heading">
-          <p class="section-label">Property documents</p>
-          <h2 id="workspace-documents-heading">One growing document library</h2>
-          <p>Acquisition, closing, provider, construction, brokerage, lease, and management documents accumulate here as the property moves through the network.</p>
+          <p class="section-label">Connected property information</p>
+          <h2 id="workspace-documents-heading">Information travels with the property</h2>
+          <p>MREO automatically makes the relevant property and transaction records available to each workflow. Downloading and re-uploading the same packet should not be part of the normal process.</p>
           <div class="document-library" id="coord-document-library"></div>
         </article>
       </section>
@@ -149,8 +149,8 @@
 
       <section class="workspace-two-column lower-workspace-grid">
         <article class="workspace-panel">
-          <p class="section-label">Shared documents</p>
-          <h2>Files available to participating providers</h2>
+          <p class="section-label">Connected property information</p>
+          <h2>Records available to participating providers</h2>
           <div class="document-library" id="provider-document-library"></div>
         </article>
         <article class="workspace-panel">
@@ -165,6 +165,6 @@
   </main>
 
   <footer class="site-footer"><p>MREO connects the transaction to the work required to transfer, improve, represent, rent, and manage the property.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
-  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260917-seller-media-picker"></script><script src="coordination.js?v=20260917-workspace-v2"></script>
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260917-seller-media-picker"></script><script src="coordination.js?v=20260917-workspace-v3"></script>
 </body>
 </html>

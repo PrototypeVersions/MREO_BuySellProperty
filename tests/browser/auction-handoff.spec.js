@@ -1,36 +1,38 @@
 import {test,expect} from "@playwright/test";
 
-test("completed auction hands seller and winning buyer into the same property workspace",async({page})=>{
- await page.goto("/auction.html?id=demo-property&view=seller");
- await expect(page.locator("#test-controls")).toBeVisible();
- await page.locator("#test-controls summary").click();
- await page.locator("#test-actor").selectOption("test-seller");
- await page.getByRole("button",{name:"Advance to result"}).click();
- await expect(page.locator("#auction-result")).toContainText("Highest offer at close");
- await expect(page.getByRole("button",{name:"Simulate completed sale"})).toBeVisible();
- await page.getByRole("button",{name:"Simulate completed sale"}).click();
-
- await expect(page.getByRole("button",{name:"Download seller closing package"})).toBeVisible();
- const sellerWorkspace=page.getByRole("link",{name:"Open seller closing workspace →"});
- await expect(sellerWorkspace).toBeVisible();
- const sellerHref=new URL(await sellerWorkspace.getAttribute("href"),page.url());
- expect(sellerHref.searchParams.get("auction")).toBe("demo-property");
- expect(sellerHref.searchParams.get("role")).toBe("seller");
- expect(sellerHref.searchParams.get("address")).toContain("4218 Maple Ridge Drive");
-
- await page.getByRole("button",{name:"Buyer view"}).click();
+test("closed auction hands the winning buyer into closing before sale completion",async({page})=>{
+ await page.goto("/auction.html?id=demo-property&view=buyer");
+ const controls=page.locator("#test-controls");
+ await expect(controls).toBeVisible();
+ if(!(await controls.getAttribute("open"))) await controls.locator("summary").click();
  await page.locator("#test-actor").selectOption("test-buyer-c");
+ await page.getByRole("button",{name:"Advance to result"}).click();
  await expect(page.locator("#auction-result")).toContainText("Your bid won");
- await expect(page.getByRole("button",{name:"Download acquisition package"})).toBeVisible();
- const buyerWorkspace=page.getByRole("link",{name:"Open acquired-property workspace →"});
- await expect(buyerWorkspace).toBeVisible();
- const buyerHref=new URL(await buyerWorkspace.getAttribute("href"),page.url());
- expect(buyerHref.searchParams.get("auction")).toBe("demo-property");
- expect(buyerHref.searchParams.get("role")).toBe("buyer");
- expect(Number(buyerHref.searchParams.get("price"))).toBeGreaterThan(0);
-
- await buyerWorkspace.click();
+ const workspace=page.getByRole("link",{name:"Begin closing & coordination →"});
+ await expect(workspace).toBeVisible();
+ const href=new URL(await workspace.getAttribute("href"),page.url());
+ expect(href.searchParams.get("auction")).toBe("demo-property");
+ expect(href.searchParams.get("role")).toBe("buyer");
+ expect(href.searchParams.get("stage")).toBe("won");
+ expect(Number(href.searchParams.get("price"))).toBeGreaterThan(0);
+ await workspace.click();
  await expect(page).toHaveURL(/coordination\.html\?/);
  await expect(page.locator("#coord-record-title")).toContainText("4218 Maple Ridge Drive");
- await expect(page.getByRole("button",{name:"Download acquisition package"})).toBeVisible();
+ await expect(page.locator("#acquisition-heading")).toContainText("Seller acceptance and closing");
+ await expect(page.getByRole("link",{name:"Start closing / title transfer →"})).toBeVisible();
+ await expect(page.getByRole("button",{name:/Download acquisition package/i})).toHaveCount(0);
+});
+
+test("seller can enter the shared closing workspace once the auction closes",async({page})=>{
+ await page.goto("/auction.html?id=demo-property&view=seller");
+ const controls=page.locator("#test-controls");
+ await expect(controls).toBeVisible();
+ if(!(await controls.getAttribute("open"))) await controls.locator("summary").click();
+ await page.locator("#test-actor").selectOption("test-seller");
+ await page.getByRole("button",{name:"Advance to result"}).click();
+ const workspace=page.getByRole("link",{name:"Continue seller closing →"});
+ await expect(workspace).toBeVisible();
+ const href=new URL(await workspace.getAttribute("href"),page.url());
+ expect(href.searchParams.get("stage")).toBe("won");
+ expect(href.searchParams.get("role")).toBe("seller");
 });

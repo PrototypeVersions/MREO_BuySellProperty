@@ -34,7 +34,7 @@ test("Turkey property uses the standard hero, gallery, video, and coordination l
 test("coordination request is the same object across buyer and service partner views",async({page})=>{
  const base="/coordination.html?type=property&auction=coord-cross-role&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
  await page.goto(base);
- await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v2:coord-cross-role"));
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-cross-role"));
  await page.reload();
  await page.locator('[data-service="contractors"]').click();
  await expect(page).toHaveURL(/service=contractors/);
@@ -71,7 +71,7 @@ test("coordination request is the same object across buyer and service partner v
 test("all four coordination pathways can be submitted and appear in the provider inbox",async({page})=>{
  const base="/coordination.html?type=property&auction=coord-all-paths&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
  await page.goto(base);
- await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v2:coord-all-paths"));
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-all-paths"));
  await page.reload();
  for(const service of ["title","contractors","realtors","rentals"]){
   await page.locator(`[data-service="${service}"]`).click();
@@ -86,16 +86,42 @@ test("all four coordination pathways can be submitted and appear in the provider
  await expect(page.locator("#provider-inbox-count")).toHaveText("4");
 });
 
-test("coordination workspace includes downloadable property documents and seller perspective",async({page})=>{
+test("coordination keeps property records connected without unnecessary downloads",async({page})=>{
  await page.goto("/coordination.html?auction=coord-docs&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000");
- await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v2:coord-docs"));
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-docs"));
  await page.reload();
- await expect(page.locator("#coord-document-library .document-item")).toHaveCount(5);
- await expect(page.getByRole("button",{name:"Download acquisition package"})).toBeVisible();
+ await expect(page.locator("#coord-document-library .document-item")).toHaveCount(3);
+ await expect(page.locator("#coord-document-library")).toContainText("Connected");
+ await expect(page.getByRole("button",{name:/Download acquisition package/i})).toHaveCount(0);
+ await expect(page.getByRole("link",{name:/title \/ transfer workflow/i})).toBeVisible();
  await page.getByRole("button",{name:"Seller",exact:true}).click();
  await expect(page.locator("#role-workspace-title")).toContainText("Closing, transfer");
- await expect(page.getByRole("button",{name:"Download seller closing package"})).toBeVisible();
  await expect(page.locator("#acquisition-details")).toContainText("Winning buyer");
+});
+
+test("title workflow requires buyer closing participation",async({page})=>{
+ const base="/coordination.html?type=property&auction=coord-title-buyer&address=2605%20Preston%20Meadow%20Court%2C%20Plano%2C%20TX%2075093&price=2000000&stage=won";
+ await page.goto(base);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-title-buyer"));
+ await page.reload();
+ await expect(page.locator("#acquisition-heading")).toContainText("Seller acceptance and closing");
+ await page.getByRole("link",{name:"Start closing / title transfer →"}).click();
+ await expect(page.locator('input[name="legalName"]')).toBeVisible();
+ await expect(page.locator('select[name="funding"]')).toBeVisible();
+ await page.locator("#service-submit").click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Accept request"}).click();
+ await page.getByRole("button",{name:"Send provider response"}).click();
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await page.getByRole("button",{name:"Approve provider response"}).click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Start work"}).click();
+ await expect(page.getByRole("button",{name:"Waiting for buyer closing confirmation"})).toBeDisabled();
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Confirm closing / signing complete"})).toBeVisible();
+ await page.getByRole("button",{name:"Confirm closing / signing complete"}).click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.getByRole("button",{name:"Mark complete"})).toBeVisible();
 });
 
 test("seller-created property listings are routed through the detail page",async({page})=>{

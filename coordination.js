@@ -30,7 +30,8 @@
     title: params.get("title") || (hasIncomingContext ? "" : DEMO.title),
     price: params.get("price") || (hasIncomingContext ? "" : DEMO.price),
     image: safeImage(params.get("image")) || (hasIncomingContext ? "" : DEMO.image),
-    count: params.get("count") || (hasIncomingContext ? "" : DEMO.count)
+    count: params.get("count") || (hasIncomingContext ? "" : DEMO.count),
+    stage: params.get("stage") || "complete"
   };
   context.label = context.address || context.title || "MREO property record";
   context.hasSelection = !!(context.address || context.title || context.auction);
@@ -44,22 +45,36 @@
       shortTitle: "Title / Settlement",
       provider: "Northstar Title & Settlement · demonstration",
       specialty: "Title / settlement",
-      clientIntro: "Send the transaction packet to a participating title or settlement company, confirm the parties and target closing, then follow title review, requirements, signatures, and completion.",
-      steps: ["Submit parties, closing target, and title documents", "Provider accepts the file and reviews the property packet", "Title requirements and engagement terms are returned", "Client resolves or approves outstanding requirements", "Closing and transfer documents are completed"],
-      action: "Submit title transfer request",
+      clientIntro: "Begin the closing process using the transaction information already attached to the property record. Confirm the buyer details a title / settlement company would ordinarily need, then review requirements, approve the provider response, and confirm signing before transfer is completed.",
+      steps: ["Confirm closing profile, legal name, vesting, funding, and target date", "Provider accepts the file and reviews the connected transaction record", "Preliminary title / settlement requirements are returned", "Client approves the provider response and completes required closing steps", "Transfer and final closing record are completed"],
+      action: "Start title / settlement request",
       fields: `
-        <div class="service-form-section"><h3>Closing information</h3>
+        <div class="service-form-section"><h3>Buyer closing profile</h3>
+          <label>Buyer legal name / entity<input name="legalName" type="text" value="Demo Buyer" required></label>
           <label>Preferred title / settlement provider<select name="providerPreference"><option value="Match me with a participating provider">Match me with a participating provider</option><option value="Northstar Title & Settlement">Northstar Title & Settlement · demonstration</option></select></label>
           <label>Target closing date<input name="closingTarget" type="date" value="2026-10-16" required></label>
-          <label>Property ownership / vesting<input name="vesting" type="text" value="Individual ownership" required></label>
+          <label>Ownership / vesting<input name="vesting" type="text" value="Individual ownership" required></label>
+          <label>Funding method<select name="funding"><option>Cash purchase</option><option>Financing</option><option>Other / to be confirmed</option></select></label>
+          <label>Signing preference<select name="signingPreference"><option>Remote / electronic where permitted</option><option>In person</option><option>Coordinate with settlement provider</option></select></label>
         </div>
-        <div class="service-form-section"><h3>Transfer notes</h3>
-          <label>Known title, lien, entity, or closing information<textarea name="notes" placeholder="Known title issues, entity ownership, payoff information, closing requirements, or other notes">No known title exceptions. Please coordinate the standard post-auction transfer and settlement package.</textarea></label>
+        <div class="service-form-section"><h3>Buyer notes</h3>
+          <label>Closing or title information<textarea name="notes" placeholder="Special closing instructions, entity information, known title questions, or other details">Please coordinate the standard post-auction title and settlement process using the transaction information already attached to this MREO property record.</textarea></label>
         </div>`,
-      proposalTitle: "Title engagement & preliminary requirements",
+      sellerFields: `
+        <div class="service-form-section"><h3>Seller closing profile</h3>
+          <label>Seller legal name / entity<input name="sellerLegalName" type="text" value="Demo Seller" required></label>
+          <label>Preferred title / settlement provider<select name="providerPreference"><option value="Match me with a participating provider">Match me with a participating provider</option><option value="Northstar Title & Settlement">Northstar Title & Settlement · demonstration</option></select></label>
+          <label>Target closing date<input name="closingTarget" type="date" value="2026-10-16" required></label>
+          <label>Payoff / lien status<select name="payoffStatus"><option>No known payoff or lien issue</option><option>Mortgage payoff required</option><option>Other lien / payoff information to provide</option></select></label>
+          <label>Signing preference<select name="signingPreference"><option>Remote / electronic where permitted</option><option>In person</option><option>Coordinate with settlement provider</option></select></label>
+        </div>
+        <div class="service-form-section"><h3>Seller notes</h3>
+          <label>Known title, payoff, entity, or closing information<textarea name="notes">No known title exceptions. Please coordinate seller-side requirements through the shared MREO transaction record.</textarea></label>
+        </div>`,
+      proposalTitle: "Preliminary title & settlement requirements",
       proposalAmount: 2150,
-      proposalBody: "Demonstration estimated title, escrow, settlement, and recording charges: $2,150. Preliminary title review is ready. Client approval is requested before the provider proceeds to final closing preparation.",
-      completionTitle: "Recorded transfer & closing completion record"
+      proposalBody: "Demonstration preliminary title / settlement response: estimated title, escrow, settlement, and recording charges of $2,150. The initial review is ready for client approval before final closing preparation.",
+      completionTitle: "Recorded transfer & final closing record"
     },
     contractors: {
       eyebrow: "02 · Improve",
@@ -163,11 +178,12 @@
     if (context.price) out.set("price", context.price);
     if (context.image) out.set("image", context.image);
     if (context.count) out.set("count", context.count);
+    if (context.stage) out.set("stage", context.stage);
     Object.entries(extra).forEach(([key, value]) => value !== undefined && value !== null && value !== "" && out.set(key, value));
     return out.toString();
   }
 
-  const stateKey = `mreo:coordination:v2:${context.key}`;
+  const stateKey = `mreo:coordination:v3:${context.key}`;
 
   function documentRecord(id, name, category, audience, body, service = "") {
     return {id, name, category, audience, body, service, createdAt: Date.now()};
@@ -175,35 +191,60 @@
 
   function baseDocuments() {
     const price = money(context.price) || "$385,000";
+    const stage = context.stage === "won" ? "Winning bid selected — closing required" : "Acquisition complete";
     return [
-      documentRecord("purchase-confirmation", "Executed acquisition confirmation.txt", "Acquisition", ["buyer","seller","provider"], `MREO DEMONSTRATION — ACQUISITION CONFIRMATION\n\nProperty: ${context.label}\nPurchase price: ${price}\nWinning buyer: Demo Buyer\nSeller: Demo Seller\nAuction: ${context.auction || "demonstration auction"}\nStatus: Acquisition complete\n\nThis fictional file demonstrates the transaction document that would remain attached to the MREO property record.`),
-      documentRecord("property-packet", "Property information packet.txt", "Property record", ["buyer","seller","provider"], `MREO DEMONSTRATION — PROPERTY INFORMATION PACKET\n\nProperty: ${context.label}\nReference value: ${price}\nRecord ID: ${context.key}\n\nIncludes the standardized property information that follows the property into title, construction, brokerage, rental, and management workflows.`),
-      documentRecord("auction-summary", "Auction result summary.txt", "Auction", ["buyer","seller"], `MREO DEMONSTRATION — AUCTION RESULT\n\nProperty: ${context.label}\nWinning price: ${price}\nWinner: Demo Buyer\nSeller: Demo Seller\nResult: Winning bid selected and transaction handed into the MREO coordination layer.`),
-      documentRecord("seller-summary", "Seller sale & handoff summary.txt", "Closing", ["seller","provider"], `MREO DEMONSTRATION — SELLER HANDOFF\n\nProperty: ${context.label}\nSeller: Demo Seller\nBuyer: Demo Buyer\nSale amount: ${price}\n\nThe seller can use the same workspace to respond to title requirements and follow the transfer through closing.`),
-      documentRecord("coordination-handoff", "Coordination handoff sheet.txt", "Coordination", ["buyer","seller","provider"], `MREO DEMONSTRATION — COORDINATION HANDOFF\n\nProperty: ${context.label}\n\nAvailable pathways:\n1. Transfer\n2. Improve\n3. Represent\n4. Rent / Manage\n\nEach request remains linked to this shared property record.`),
-      documentRecord("closing-checklist", "Closing readiness checklist.txt", "Closing", ["buyer","seller","provider"], `MREO DEMONSTRATION — CLOSING READINESS CHECKLIST\n\nProperty: ${context.label}\n\n• Confirm buyer and seller information\n• Route title / settlement request\n• Share transaction packet\n• Resolve provider requirements\n• Execute transfer and closing documents\n• Preserve final closing package in the property record`)
+      documentRecord("property-packet", "Connected property information", "Property record", ["buyer","seller","provider"], `MREO DEMONSTRATION — CONNECTED PROPERTY INFORMATION
+
+Property: ${context.label}
+Reference value: ${price}
+Record ID: ${context.key}
+
+This information remains inside MREO and is automatically available to participating workflows. The user does not need to download and re-upload it.`),
+      documentRecord("transaction-record", "Connected transaction record", "Transaction", ["buyer","seller","provider"], `MREO DEMONSTRATION — TRANSACTION RECORD
+
+Property: ${context.label}
+Price / winning amount: ${price}
+Buyer: Demo Buyer
+Seller: Demo Seller
+Auction: ${context.auction || "demonstration auction"}
+Status: ${stage}
+
+This record travels with the property into title and other coordination workflows.`),
+      documentRecord("closing-checklist", "Connected closing requirements", "Closing", ["buyer","seller","provider"], `MREO DEMONSTRATION — CLOSING REQUIREMENTS
+
+Property: ${context.label}
+
+• Confirm buyer and seller information
+• Open title / settlement request
+• Resolve provider requirements
+• Complete signing / closing steps
+• Preserve the final closing record in MREO`)
     ];
   }
 
   function defaultState() {
     const now = Date.now();
+    const pendingClosing = context.stage === "won";
     return {
-      version: 2,
+      version: 3,
       createdAt: now,
       acquisition: {
-        status: "complete",
+        status: pendingClosing ? "pending-closing" : "complete",
         buyer: "Demo Buyer",
         seller: "Demo Seller",
         price: Number(context.price || 385000),
-        completedAt: now - 86400000,
+        completedAt: pendingClosing ? null : now - 86400000,
         auctionId: context.auction || "demo-property"
       },
       requests: {title:null, contractors:null, realtors:null, rentals:null},
       documents: baseDocuments(),
-      activity: [
+      activity: pendingClosing ? [
+        {id:"acq-2", at:now - 300000, actor:"Auction", important:true, text:`Demo Buyer recorded the winning result at ${money(context.price) || "$385,000"}. Seller acceptance and closing are still required.`},
+        {id:"acq-1", at:now - 360000, actor:"MREO", important:false, text:"The winning transaction entered the property workspace so title / settlement can begin."}
+      ] : [
         {id:"acq-3", at:now - 86400000, actor:"MREO", important:true, text:"Acquisition completed and the property entered the coordination workspace."},
         {id:"acq-2", at:now - 90000000, actor:"Auction", important:false, text:`Demo Buyer recorded the winning result at ${money(context.price) || "$385,000"}.`},
-        {id:"acq-1", at:now - 93600000, actor:"Seller", important:false, text:"Demo Seller made the property packet available to the winning buyer."}
+        {id:"acq-1", at:now - 93600000, actor:"Seller", important:false, text:"Demo Seller made the connected property record available to the winning buyer."}
       ]
     };
   }
@@ -211,7 +252,7 @@
   function loadState() {
     try {
       const parsed = JSON.parse(localStorage.getItem(stateKey) || "null");
-      if (parsed && parsed.version === 2 && parsed.requests && parsed.documents && parsed.activity) return parsed;
+      if (parsed && parsed.version === 3 && parsed.requests && parsed.documents && parsed.activity) return parsed;
     } catch {}
     const fresh = defaultState();
     localStorage.setItem(stateKey, JSON.stringify(fresh));
@@ -298,6 +339,7 @@
       "in-progress":"complete"
     }[request.status];
     if (!next) { toast("This request is already complete."); return false; }
+    if (serviceKey === "title" && request.status === "in-progress" && !request.clientClosingConfirmed) { toast("Switch to the Buyer view and confirm the closing / signing step before completing the title workflow."); return false; }
     const config = services[serviceKey];
     const messages = {
       matched:`${config.provider} accepted the request and opened the shared property packet.`,
@@ -323,7 +365,7 @@
         transition(serviceKey, "proposal", "Service Partner", `${services[serviceKey].provider} automatically returned a demonstration proposal / engagement package.`); changed = true;
       } else if (request.status === "approved" && elapsed > 15000) {
         transition(serviceKey, "in-progress", "Service Partner", `${services[serviceKey].provider} began the approved demonstration work.`); changed = true;
-      } else if (request.status === "in-progress" && elapsed > 25000) {
+      } else if (request.status === "in-progress" && elapsed > 25000 && (serviceKey !== "title" || request.clientClosingConfirmed)) {
         transition(serviceKey, "complete", "Service Partner", `${services[serviceKey].provider} completed the demonstration service.`); changed = true;
       }
     });
@@ -355,7 +397,7 @@
       else img.hidden = true;
     }
     const badge = $(`${prefix}-status`);
-    if (badge) badge.textContent = context.hasSelection ? "MREO record connected" : "No property selected";
+    if (badge) badge.textContent = context.hasSelection ? (state?.acquisition?.status === "complete" ? "MREO record connected" : "Winning bid · closing required") : "No property selected";
   }
 
   function statusClass(status) { return `status-${String(status || "submitted").replace(/[^a-z-]/g, "")}`; }
@@ -364,23 +406,22 @@
   function completeRequests() { return activeRequests().filter((request) => request.status === "complete"); }
 
   function roleCopy() {
+    const pending = state.acquisition.status !== "complete";
     if (role === "seller") return {
       eyebrow:"Seller workspace",
-      title:"Closing, transfer, and seller handoff in one place.",
-      copy:"Follow the winning transaction, supply requested seller material, coordinate title and closing, and use the same property record for any pre-closing repair, representation, or management handoff that remains relevant.",
-      acquisitionEyebrow:"Sale & closing handoff",
-      acquisitionTitle:"The winning buyer is connected to the seller's property record.",
-      acquisitionCopy:"The fictional auction has ended. Download the seller package, follow title requirements, and see the same provider activity that the buyer sees from the other side.",
-      packageLabel:"Download seller closing package"
+      title: pending ? "The auction is over. Closing is the next shared workflow." : "Closing, transfer, and seller handoff in one place.",
+      copy: pending ? "Follow seller acceptance, title requirements, payoff or signing requests, and closing without moving the transaction packet between systems." : "Follow the final transfer record and any remaining provider activity from the seller side.",
+      acquisitionEyebrow: pending ? "Winning transaction" : "Sale & closing handoff",
+      acquisitionTitle: pending ? "The winning buyer is selected. Closing still needs to be completed." : "The completed transaction remains attached to this property record.",
+      acquisitionCopy: pending ? "Start or follow Title / Settlement below. MREO automatically carries the auction and property information into that workflow; only supply information the provider actually needs from you." : "The final transaction information stays connected to the property record and can feed later coordination workflows."
     };
     return {
       eyebrow:"Buyer workspace",
-      title:"Your acquired property, ready for what comes next.",
-      copy:"Download the acquisition package, start any coordination pathway, review provider responses, approve work, and keep every resulting document attached to the property record.",
-      acquisitionEyebrow:"Acquisition complete",
-      acquisitionTitle:`${context.title || context.address || "This property"} is now in your MREO workspace.`,
-      acquisitionCopy:"The fictional auction and purchase handoff are complete. The core acquisition files are available below and the same property record can now feed every coordination request.",
-      packageLabel:"Download acquisition package"
+      title: pending ? "Your winning bid is selected. Complete the acquisition next." : "Your property record is ready for what comes next.",
+      copy: pending ? "Begin title / settlement, respond to provider requirements, approve the closing response, and confirm signing. Existing auction and property information is passed automatically." : "Start any coordination pathway, review provider responses, approve work, and keep the resulting records attached to the property.",
+      acquisitionEyebrow: pending ? "Next step · Complete the acquisition" : "Acquisition complete",
+      acquisitionTitle: pending ? "Seller acceptance and closing are still required." : `${context.title || context.address || "This property"} is now in your MREO workspace.`,
+      acquisitionCopy: pending ? "Use the Title / Settlement workflow to confirm your closing profile and move the transaction toward transfer. You do not need to download a packet and upload it again—the connected property record travels with the request." : "The acquisition information stays inside MREO and can automatically feed Transfer, Improve, Represent, and Rent / Manage."
     };
   }
 
@@ -401,13 +442,16 @@
 
   function renderDocumentLibrary(container, audience, serviceFilter = "") {
     if (!container) return;
-    const docs = state.documents.filter((doc) => doc.audience.includes(audience) && (!serviceFilter || doc.service === serviceFilter || doc.id === "property-packet"));
-    if (!docs.length) { container.innerHTML = '<div class="document-empty">No documents are available yet.</div>'; return; }
-    container.innerHTML = docs.slice().reverse().map((doc) => `
+    const docs = state.documents.filter((doc) => doc.audience.includes(audience) && (!serviceFilter || doc.service === serviceFilter || doc.id === "property-packet" || doc.id === "transaction-record"));
+    if (!docs.length) { container.innerHTML = '<div class="document-empty">No workflow records are available yet.</div>'; return; }
+    container.innerHTML = docs.slice().reverse().map((doc) => {
+      const downloadable = /-completion-/.test(doc.id);
+      return `
       <div class="document-item">
         <div class="document-main"><strong>${esc(doc.name)}</strong><span>${esc(doc.category)} · ${shortDate(doc.createdAt)}</span></div>
-        <button type="button" class="document-download" data-document-id="${esc(doc.id)}">Download</button>
-      </div>`).join("");
+        ${downloadable ? `<button type="button" class="document-download" data-document-id="${esc(doc.id)}">Download final record</button>` : '<span class="document-state">Connected</span>'}
+      </div>`;
+    }).join("");
     container.querySelectorAll("[data-document-id]").forEach((button) => button.addEventListener("click", () => downloadDocument(button.dataset.documentId)));
   }
 
@@ -465,7 +509,11 @@
       else if (request.status === "in-progress") cards.push({title:`${config.shortTitle}: in progress`, copy:"Provider work is underway and will generate a closeout record when complete.", key});
     });
     if (!cards.length) {
-      container.innerHTML = '<div class="action-card"><strong>No client actions are waiting.</strong><p>Start any pathway above. Once a provider sends a proposal or requests information, it will appear here.</p></div>';
+      if (state.acquisition.status !== "complete" && !state.requests.title) {
+        container.innerHTML = `<div class="action-card"><strong>Next step: Start Title / Settlement.</strong><p>The winning bid is selected, but closing is still required. Confirm the closing profile and send the connected transaction record to a participating provider.</p><a href="coordination-service.html?${query({service:"title", role})}">Start closing process →</a></div>`;
+      } else {
+        container.innerHTML = '<div class="action-card"><strong>No client actions are waiting.</strong><p>When a provider sends a response or requests information, it will appear here.</p></div>';
+      }
       return;
     }
     container.innerHTML = cards.map((card) => `<div class="action-card"><strong>${esc(card.title)}</strong><p>${esc(card.copy)}</p><a href="coordination-service.html?${query({service:card.key, role})}">Open workflow →</a></div>`).join("");
@@ -488,12 +536,17 @@
       $("acquisition-eyebrow").textContent = copy.acquisitionEyebrow;
       $("acquisition-heading").textContent = copy.acquisitionTitle;
       $("acquisition-copy").textContent = copy.acquisitionCopy;
-      $("download-acquisition-package").textContent = copy.packageLabel;
+      const pending = state.acquisition.status !== "complete";
       const details = role === "seller" ? [
-        ["Seller", state.acquisition.seller], ["Winning buyer", state.acquisition.buyer], ["Sale amount", money(state.acquisition.price)], ["Auction handoff", "Complete"], ["Transfer status", state.requests.title ? statusLabels[state.requests.title.status] : "Not started"]
+        ["Seller", state.acquisition.seller], ["Winning buyer", state.acquisition.buyer], ["Winning amount", money(state.acquisition.price)], ["Transaction status", pending ? "Closing required" : "Complete"], ["Transfer status", state.requests.title ? statusLabels[state.requests.title.status] : "Not started"]
       ] : [
-        ["Owner", state.acquisition.buyer], ["Purchase price", money(state.acquisition.price)], ["Acquisition status", "Complete"], ["Acquired", shortDate(state.acquisition.completedAt)], ["Property record", context.key]
+        ["Buyer", state.acquisition.buyer], ["Winning / purchase amount", money(state.acquisition.price)], ["Acquisition status", pending ? "Winning bid selected · closing required" : "Complete"], [pending ? "Next required workflow" : "Acquired", pending ? "Title / Settlement" : shortDate(state.acquisition.completedAt)], ["Property record", context.key]
       ];
+      const primaryAction = $("acquisition-primary-action");
+      if (primaryAction) {
+        primaryAction.href = `coordination-service.html?${query({service:"title", role})}`;
+        primaryAction.textContent = pending ? (role === "seller" ? "Open seller closing workflow →" : "Start closing / title transfer →") : "Open title / transfer workflow →";
+      }
       $("acquisition-details").innerHTML = details.map(([label,value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("");
       $("coord-stat-open").textContent = String(openRequests().length);
       $("coord-stat-docs").textContent = String(state.documents.filter((doc) => doc.audience.includes(role)).length);
@@ -592,7 +645,7 @@
     if (!request) {
       form.hidden = false;
       statusCard.hidden = true;
-      $("service-form-fields").innerHTML = config.fields;
+      $("service-form-fields").innerHTML = currentServiceKey === "title" && role === "seller" ? (config.sellerFields || config.fields) : config.fields;
       $("service-submit").textContent = config.action;
       $("request-title").textContent = role === "seller" ? `Submit seller-side ${config.shortTitle.toLowerCase()} request` : `Submit ${config.shortTitle.toLowerCase()} request`;
       $("request-intro").textContent = config.clientIntro;
@@ -614,6 +667,11 @@
       const amount = request.proposal?.amount ? ` · ${money(request.proposal.amount)}` : "";
       $("client-status-copy").textContent = `${request.proposal?.body || config.proposalBody}${amount}`;
       actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="approve">Approve provider response</button><button type="button" class="secondary-button" data-client-action="request-change">Request a change</button>';
+    } else if (currentServiceKey === "title" && request.status === "in-progress" && role === "buyer" && !request.clientClosingConfirmed) {
+      $("client-status-copy").textContent = "The settlement provider is preparing the closing. Confirm this fictional signing / closing step once the buyer has completed the required signing.";
+      actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="confirm-closing">Confirm closing / signing complete</button>';
+    } else if (currentServiceKey === "title" && request.status === "in-progress" && request.clientClosingConfirmed) {
+      $("client-status-copy").textContent = "Buyer closing / signing is confirmed. The settlement provider can now finalize the transfer and publish the final closing record.";
     } else if (request.status === "complete") {
       const completionDoc = state.documents.find((doc) => doc.id === `${currentServiceKey}-completion-${request.id}`);
       if (completionDoc) actions.innerHTML = `<button type="button" class="secondary-button" data-download-document="${esc(completionDoc.id)}">Download completion record</button>`;
@@ -622,6 +680,10 @@
       if (button.dataset.clientAction === "provide-info") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} supplied the requested additional information.`);
       if (button.dataset.clientAction === "approve") transition(currentServiceKey, "approved", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} approved the provider response.`);
       if (button.dataset.clientAction === "request-change") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} requested a revision to the provider response.`);
+      if (button.dataset.clientAction === "confirm-closing") {
+        const active = state.requests[currentServiceKey];
+        if (active) { active.clientClosingConfirmed = true; active.updatedAt = Date.now(); active.lastTransitionAt = active.updatedAt; addActivity("Demo Buyer confirmed the fictional closing / signing step.", "Buyer", true); saveState(); }
+      }
       renderAll();
     }));
     actions.querySelectorAll("[data-download-document]").forEach((button) => button.addEventListener("click", () => downloadDocument(button.dataset.downloadDocument)));
@@ -663,8 +725,13 @@
       guidance.textContent = "The client approved the response. Begin or schedule the service.";
       addButton("Start work", "in-progress", true);
     } else if (request.status === "in-progress") {
-      guidance.textContent = "Work is in progress. When finished, complete the job and publish the closeout record.";
-      addButton("Mark complete", "complete", true); addButton("Request information", "needs-info");
+      if (currentServiceKey === "title" && !request.clientClosingConfirmed) {
+        guidance.textContent = "Closing preparation is in progress. Waiting for the buyer to confirm the fictional signing / closing step before final transfer can be completed.";
+        addButton("Waiting for buyer closing confirmation", "wait", false, true);
+      } else {
+        guidance.textContent = "Work is in progress. When finished, complete the job and publish the final record.";
+        addButton("Mark complete", "complete", true); addButton("Request information", "needs-info");
+      }
     } else {
       guidance.textContent = "This service is complete. The closeout package is attached to the shared property record.";
       addButton("Complete", "wait", false, true);

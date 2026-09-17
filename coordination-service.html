@@ -7,7 +7,7 @@
   <title>MREO Coordination Workflow</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
-  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v2">
+  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v3">
 </head>
 <body class="coordination-service-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -64,8 +64,8 @@
 
         <form class="service-request-form" id="service-request-form">
           <div id="service-form-fields"></div>
-          <label class="service-upload-field">Supporting files
-            <span>Upload photographs, reports, agreements, estimates, or other material that should travel with the property request.</span>
+          <label class="service-upload-field">Optional additional files
+            <span>The existing MREO property and transaction record is already attached automatically. Add a file only if the provider needs something that is not already in the record.</span>
             <input id="service-attachments" name="attachments" type="file" multiple>
           </label>
           <div class="service-selected-files" id="service-selected-files" aria-live="polite"></div>
@@ -113,9 +113,9 @@
 
     <section class="workspace-two-column service-lower-grid">
       <article class="workspace-panel">
-        <p class="section-label">Files produced by this pathway</p>
-        <h2>Service documents</h2>
-        <p>As the fictional workflow progresses, proposals, requirements, approvals, and completion records appear here and are also added to the property-level document library.</p>
+        <p class="section-label">Workflow records</p>
+        <h2>Connected service records</h2>
+        <p>Provider responses and final closeout records stay attached to the property automatically. Only final records that are useful outside MREO are presented as downloads.</p>
         <div id="service-document-library" class="document-library"></div>
       </article>
       <article class="workspace-panel">
@@ -129,6 +129,6 @@
   </main>
 
   <footer class="site-footer"><p>MREO coordinates property workflows and provider handoffs around a shared property record.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
-  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260917-seller-media-picker"></script><script src="coordination.js?v=20260917-workspace-v2"></script>
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260917-seller-media-picker"></script><script src="coordination.js?v=20260917-workspace-v3"></script>
 </body>
 </html>
