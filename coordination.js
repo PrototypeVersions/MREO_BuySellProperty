@@ -3,76 +3,155 @@
 
   const params = new URLSearchParams(location.search);
   const $ = (id) => document.getElementById(id);
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   const safeImage = (value) => /^(https?:\/\/|assets\/)/i.test(value || "") ? value : "";
   const money = (value) => {
     const n = Number(value || 0);
     return Number.isFinite(n) && n > 0 ? new Intl.NumberFormat("en-US", {style:"currency", currency:"USD", maximumFractionDigits:0}).format(n) : "";
   };
+  const prettyDate = (value) => new Intl.DateTimeFormat("en-US", {month:"short", day:"numeric", year:"numeric", hour:"numeric", minute:"2-digit"}).format(new Date(value));
+  const shortDate = (value) => new Intl.DateTimeFormat("en-US", {month:"short", day:"numeric", year:"numeric"}).format(new Date(value));
 
-  const context = {
-    kind: params.get("type") === "portfolio" ? "portfolio" : "property",
-    auction: params.get("auction") || "",
-    address: params.get("address") || "",
-    title: params.get("title") || "",
-    price: params.get("price") || "",
-    image: safeImage(params.get("image")),
-    count: params.get("count") || ""
+  const DEMO = {
+    kind: "property",
+    auction: "demo-property",
+    address: "4218 Maple Ridge Drive, Dallas, TX 75229",
+    title: "4218 Maple Ridge Drive",
+    price: "385000",
+    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=84",
+    count: ""
   };
-  context.label = context.title || context.address || "No property selected";
-  context.hasSelection = !!(context.title || context.address || context.auction);
+
+  const hasIncomingContext = ["auction","address","title","price","image","count"].some((key) => params.get(key));
+  const context = {
+    kind: params.get("type") === "portfolio" ? "portfolio" : (hasIncomingContext ? "property" : DEMO.kind),
+    auction: params.get("auction") || (hasIncomingContext ? "" : DEMO.auction),
+    address: params.get("address") || (hasIncomingContext ? "" : DEMO.address),
+    title: params.get("title") || (hasIncomingContext ? "" : DEMO.title),
+    price: params.get("price") || (hasIncomingContext ? "" : DEMO.price),
+    image: safeImage(params.get("image")) || (hasIncomingContext ? "" : DEMO.image),
+    count: params.get("count") || (hasIncomingContext ? "" : DEMO.count)
+  };
+  context.label = context.address || context.title || "MREO property record";
+  context.hasSelection = !!(context.address || context.title || context.auction);
   context.key = context.auction || context.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unselected";
+  context.isDefaultDemo = !hasIncomingContext;
 
   const services = {
     title: {
-      eyebrow: "Transfer",
+      eyebrow: "01 · Transfer",
       title: "Title Transfer",
-      intro: "Coordinate the title and settlement work needed to move ownership from seller to buyer while keeping the property record and required documents in one workflow.",
-      steps: ["Select a title or settlement provider", "Collect and verify transaction documents", "Track title search and review", "Resolve title requirements or exceptions", "Prepare transfer and closing"],
-      action: "Start title coordination",
+      shortTitle: "Title / Settlement",
+      provider: "Northstar Title & Settlement · demonstration",
+      specialty: "Title / settlement",
+      clientIntro: "Send the transaction packet to a participating title or settlement company, confirm the parties and target closing, then follow title review, requirements, signatures, and completion.",
+      steps: ["Submit parties, closing target, and title documents", "Provider accepts the file and reviews the property packet", "Title requirements and engagement terms are returned", "Client resolves or approves outstanding requirements", "Closing and transfer documents are completed"],
+      action: "Submit title transfer request",
       fields: `
-        <label>Preferred title / settlement provider<select name="provider"><option>Match me with a participating provider</option><option>Provider A · demonstration</option><option>Provider B · demonstration</option></select></label>
-        <label>Closing target<input name="target" type="date"></label>
-        <label>Transfer notes<textarea name="notes" placeholder="Known title issues, entity ownership, closing requirements, or other notes"></textarea></label>`,
-      providers: [["Provider A · demonstration","Title search, settlement, document coordination"],["Provider B · demonstration","Title review, escrow, closing coordination"]]
+        <div class="service-form-section"><h3>Closing information</h3>
+          <label>Preferred title / settlement provider<select name="providerPreference"><option value="Match me with a participating provider">Match me with a participating provider</option><option value="Northstar Title & Settlement">Northstar Title & Settlement · demonstration</option></select></label>
+          <label>Target closing date<input name="closingTarget" type="date" value="2026-10-16" required></label>
+          <label>Property ownership / vesting<input name="vesting" type="text" value="Individual ownership" required></label>
+        </div>
+        <div class="service-form-section"><h3>Transfer notes</h3>
+          <label>Known title, lien, entity, or closing information<textarea name="notes" placeholder="Known title issues, entity ownership, payoff information, closing requirements, or other notes">No known title exceptions. Please coordinate the standard post-auction transfer and settlement package.</textarea></label>
+        </div>`,
+      proposalTitle: "Title engagement & preliminary requirements",
+      proposalAmount: 2150,
+      proposalBody: "Demonstration estimated title, escrow, settlement, and recording charges: $2,150. Preliminary title review is ready. Client approval is requested before the provider proceeds to final closing preparation.",
+      completionTitle: "Recorded transfer & closing completion record"
     },
     contractors: {
-      eyebrow: "Improve",
-      title: "Contractors",
-      intro: "Turn the property into a structured work package, invite qualified contractors to quote the job, and keep scope, photos, timing, and bid comparison connected to the property record.",
-      steps: ["Choose the work category", "Create a property work package", "Invite contractors to review the scope", "Compare quotes and timelines", "Select a provider and track the work"],
-      action: "Create contractor request",
+      eyebrow: "02 · Improve",
+      title: "Improve",
+      shortTitle: "Construction / Improvement",
+      provider: "Cedar Build & Rehab · demonstration",
+      specialty: "Construction / improvement",
+      clientIntro: "Create a structured work package with scope, budget, access information, and supporting files. A participating contractor can review the same packet, request information, send a proposal, and track the approved work through completion.",
+      steps: ["Create the property work package and upload supporting material", "Contractor reviews scope, condition, access, and timing", "Contractor returns a written scope, price, and schedule", "Client approves the proposal and scheduling", "Work progresses through completion and closeout"],
+      action: "Submit improvement request",
       fields: `
-        <label>Work category<select name="category"><option>Construction / rehabilitation</option><option>Plumbing</option><option>Electrical</option><option>Roofing</option><option>Cleaning</option><option>Landscaping</option><option>Inspection</option><option>Photography / videography</option><option>Other</option></select></label>
-        <label>Target budget<input name="budget" type="text" inputmode="numeric" placeholder="$25,000"></label>
-        <label>Desired timing<select name="timing"><option>As soon as possible</option><option>Within 30 days</option><option>Within 60 days</option><option>Flexible</option></select></label>
-        <label>Scope of work<textarea name="notes" placeholder="Describe the work, condition, access requirements, and desired outcome"></textarea></label>`,
-      providers: [["Contractor A · demonstration","General construction and rehabilitation"],["Contractor B · demonstration","Repairs, turns, and property-ready work"]]
+        <div class="service-form-section"><h3>Work package</h3>
+          <label>Work category<select name="category"><option>Construction / rehabilitation</option><option>Plumbing</option><option>Electrical</option><option>Roofing</option><option>Cleaning / turnover</option><option>Landscaping</option><option>Inspection</option><option>Photography / videography</option><option>Other</option></select></label>
+          <label>Target budget<input name="budget" type="text" inputmode="numeric" value="$30,000"></label>
+          <label>Desired timing<select name="timing"><option>Within 30 days</option><option>As soon as possible</option><option>Within 60 days</option><option>Flexible</option></select></label>
+        </div>
+        <div class="service-form-section"><h3>Scope & access</h3>
+          <label>Scope of work<textarea name="scope" required>Refresh flooring and interior paint, repair exterior trim, service HVAC, update two bathroom fixtures, and prepare the property for rental-ready condition.</textarea></label>
+          <label>Access instructions<textarea name="access">Property is vacant. Coordinate access through the MREO property record before site visits.</textarea></label>
+        </div>`,
+      proposalTitle: "Renovation scope & proposal",
+      proposalAmount: 28400,
+      proposalBody: "Demonstration proposal: $28,400 total project price with a 24-day projected schedule. Scope includes flooring, interior paint, exterior trim repair, HVAC service, bathroom fixture updates, cleanup, and completion photography.",
+      completionTitle: "Construction completion & closeout package"
     },
     realtors: {
-      eyebrow: "Represent",
-      title: "Realtors",
-      intro: "Request licensed local representation or transaction assistance without separating the property packet from the rest of the MREO workflow.",
-      steps: ["Choose the representation need", "Share the property packet", "Match with participating local professionals", "Review proposed services", "Coordinate representation and transaction support"],
-      action: "Request realtor coordination",
+      eyebrow: "03 · Represent",
+      title: "Represent",
+      shortTitle: "Brokerage / Representation",
+      provider: "MetroLine Realty Group · demonstration",
+      specialty: "Brokerage / representation",
+      clientIntro: "Share the property packet with a participating brokerage and coordinate the representation, valuation, marketing, showing, leasing, or transaction assistance needed for the next property objective.",
+      steps: ["Select the representation objective and market", "Brokerage reviews the property packet and client goals", "Brokerage returns proposed services and market positioning", "Client approves the representation package", "Representation activity and resulting documents are tracked"],
+      action: "Submit representation request",
       fields: `
-        <label>Service needed<select name="serviceNeed"><option>Seller representation / conventional listing</option><option>Buyer representation</option><option>Local showing assistance</option><option>Valuation / market assistance</option><option>Transaction support</option><option>Leasing assistance</option></select></label>
-        <label>Market / area<input name="market" type="text" placeholder="City, state, or market area"></label>
-        <label>Notes<textarea name="notes" placeholder="Describe the representation or local assistance you need"></textarea></label>`,
-      providers: [["Realtor A · demonstration","Licensed local representation and transaction support"],["Realtor B · demonstration","Listings, showings, leasing, and market assistance"]]
+        <div class="service-form-section"><h3>Representation objective</h3>
+          <label>Service needed<select name="serviceNeed"><option>Rental market positioning and leasing representation</option><option>Seller representation / conventional listing</option><option>Buyer representation</option><option>Local showing assistance</option><option>Valuation / market assistance</option><option>Transaction support</option></select></label>
+          <label>Market / area<input name="market" type="text" value="Dallas, Texas" required></label>
+          <label>Target outcome<input name="targetOutcome" type="text" value="Prepare the property for a high-quality rental launch"></label>
+        </div>
+        <div class="service-form-section"><h3>Client notes</h3>
+          <label>Representation notes<textarea name="notes">Please review the acquisition packet and renovation plan, recommend rental positioning, and prepare a representation package for leasing once improvements are complete.</textarea></label>
+        </div>`,
+      proposalTitle: "Representation & market positioning package",
+      proposalAmount: 0,
+      proposalBody: "Demonstration brokerage package: recommended post-improvement rental positioning at $2,850–$3,050 per month, professional photography after construction closeout, and leasing representation terms ready for client approval.",
+      completionTitle: "Representation activity & market handoff record"
     },
     rentals: {
-      eyebrow: "Rent / Manage",
-      title: "Property Rentals",
-      intro: "Move a property from acquisition or renovation into rental readiness, tenant placement, and eventually ongoing management through the same property record.",
-      steps: ["Choose a rental pathway", "Prepare the property for rent", "Coordinate photography and rent positioning", "Collect and review tenant applications", "Coordinate lease, move-in, and ongoing management"],
-      action: "Start rental coordination",
+      eyebrow: "04 · Rent / Manage",
+      title: "Rent / Manage",
+      shortTitle: "Rental / Property Management",
+      provider: "KeyHouse Property Management · demonstration",
+      specialty: "Rental / property management",
+      clientIntro: "Move the property from acquisition or renovation into rental readiness, tenant placement, lease execution, move-in, and ongoing management while keeping every handoff attached to the same property record.",
+      steps: ["Select rental and management objectives", "Manager reviews readiness, rent target, and property information", "Manager returns rent recommendation and management package", "Client approves leasing / management terms", "Tenant placement, lease, move-in, and management begin"],
+      action: "Submit rental / management request",
       fields: `
-        <label>Rental pathway<select name="rentalPath"><option>Prepare for rent</option><option>Find a tenant</option><option>Lease coordination</option><option>Ongoing property management</option></select></label>
-        <label>Target monthly rent<input name="rent" type="text" inputmode="numeric" placeholder="$2,500"></label>
-        <label>Availability target<input name="available" type="date"></label>
-        <label>Rental notes<textarea name="notes" placeholder="Property readiness, tenant criteria, management needs, or other goals"></textarea></label>`,
-      providers: [["Rental Provider A · demonstration","Rental readiness and tenant placement"],["Management Provider B · demonstration","Lease coordination, maintenance, and ongoing management"]]
+        <div class="service-form-section"><h3>Rental objective</h3>
+          <label>Rental pathway<select name="rentalPath"><option>Find tenant + ongoing property management</option><option>Prepare for rent</option><option>Find a tenant only</option><option>Lease coordination only</option><option>Ongoing property management only</option></select></label>
+          <label>Target monthly rent<input name="targetRent" type="text" inputmode="numeric" value="$2,950"></label>
+          <label>Availability target<input name="available" type="date" value="2026-11-15"></label>
+        </div>
+        <div class="service-form-section"><h3>Management information</h3>
+          <label>Property / tenant preferences<textarea name="criteria">Long-term residential lease. Standard screening, documented income, property-care expectations, and electronic rent collection.</textarea></label>
+          <label>Maintenance / management notes<textarea name="notes">Coordinate routine maintenance, emergency service, rent collection, lease administration, and owner reporting after move-in.</textarea></label>
+        </div>`,
+      proposalTitle: "Rental positioning & management proposal",
+      proposalAmount: 0,
+      proposalBody: "Demonstration proposal: recommended asking rent $2,950 per month, full tenant-placement workflow, electronic lease and rent collection, maintenance coordination, and an 8% demonstration monthly management fee after occupancy.",
+      completionTitle: "Lease, move-in & management activation package"
     }
+  };
+
+  const statusOrder = ["submitted","matched","needs-info","proposal","approved","in-progress","complete"];
+  const statusLabels = {
+    "submitted":"Submitted",
+    "matched":"Provider reviewing",
+    "needs-info":"Information requested",
+    "proposal":"Proposal ready",
+    "approved":"Approved",
+    "in-progress":"In progress",
+    "complete":"Complete"
+  };
+  const statusNotes = {
+    "submitted":"The request is in the MREO network and is waiting for a participating company to accept it.",
+    "matched":"A participating company has accepted the request and is reviewing the shared property packet.",
+    "needs-info":"The participating company needs additional client information before it can proceed.",
+    "proposal":"The provider has returned its fictional engagement terms, scope, or proposal for client review.",
+    "approved":"The client approved the provider response. The company can now schedule or begin its work.",
+    "in-progress":"The provider is performing the fictional service and posting progress to the shared property record.",
+    "complete":"The service is complete and its closeout documents are attached to the property record."
   };
 
   function query(extra = {}) {
@@ -84,87 +163,628 @@
     if (context.price) out.set("price", context.price);
     if (context.image) out.set("image", context.image);
     if (context.count) out.set("count", context.count);
-    Object.entries(extra).forEach(([key, value]) => value && out.set(key, value));
+    Object.entries(extra).forEach(([key, value]) => value !== undefined && value !== null && value !== "" && out.set(key, value));
     return out.toString();
   }
 
-  function status(service) {
-    try { return JSON.parse(localStorage.getItem(`mreo:coordination:${context.key}:${service}`) || "null"); }
-    catch { return null; }
+  const stateKey = `mreo:coordination:v2:${context.key}`;
+
+  function documentRecord(id, name, category, audience, body, service = "") {
+    return {id, name, category, audience, body, service, createdAt: Date.now()};
+  }
+
+  function baseDocuments() {
+    const price = money(context.price) || "$385,000";
+    return [
+      documentRecord("purchase-confirmation", "Executed acquisition confirmation.txt", "Acquisition", ["buyer","seller","provider"], `MREO DEMONSTRATION — ACQUISITION CONFIRMATION\n\nProperty: ${context.label}\nPurchase price: ${price}\nWinning buyer: Demo Buyer\nSeller: Demo Seller\nAuction: ${context.auction || "demonstration auction"}\nStatus: Acquisition complete\n\nThis fictional file demonstrates the transaction document that would remain attached to the MREO property record.`),
+      documentRecord("property-packet", "Property information packet.txt", "Property record", ["buyer","seller","provider"], `MREO DEMONSTRATION — PROPERTY INFORMATION PACKET\n\nProperty: ${context.label}\nReference value: ${price}\nRecord ID: ${context.key}\n\nIncludes the standardized property information that follows the property into title, construction, brokerage, rental, and management workflows.`),
+      documentRecord("auction-summary", "Auction result summary.txt", "Auction", ["buyer","seller"], `MREO DEMONSTRATION — AUCTION RESULT\n\nProperty: ${context.label}\nWinning price: ${price}\nWinner: Demo Buyer\nSeller: Demo Seller\nResult: Winning bid selected and transaction handed into the MREO coordination layer.`),
+      documentRecord("seller-summary", "Seller sale & handoff summary.txt", "Closing", ["seller","provider"], `MREO DEMONSTRATION — SELLER HANDOFF\n\nProperty: ${context.label}\nSeller: Demo Seller\nBuyer: Demo Buyer\nSale amount: ${price}\n\nThe seller can use the same workspace to respond to title requirements and follow the transfer through closing.`),
+      documentRecord("coordination-handoff", "Coordination handoff sheet.txt", "Coordination", ["buyer","seller","provider"], `MREO DEMONSTRATION — COORDINATION HANDOFF\n\nProperty: ${context.label}\n\nAvailable pathways:\n1. Transfer\n2. Improve\n3. Represent\n4. Rent / Manage\n\nEach request remains linked to this shared property record.`),
+      documentRecord("closing-checklist", "Closing readiness checklist.txt", "Closing", ["buyer","seller","provider"], `MREO DEMONSTRATION — CLOSING READINESS CHECKLIST\n\nProperty: ${context.label}\n\n• Confirm buyer and seller information\n• Route title / settlement request\n• Share transaction packet\n• Resolve provider requirements\n• Execute transfer and closing documents\n• Preserve final closing package in the property record`)
+    ];
+  }
+
+  function defaultState() {
+    const now = Date.now();
+    return {
+      version: 2,
+      createdAt: now,
+      acquisition: {
+        status: "complete",
+        buyer: "Demo Buyer",
+        seller: "Demo Seller",
+        price: Number(context.price || 385000),
+        completedAt: now - 86400000,
+        auctionId: context.auction || "demo-property"
+      },
+      requests: {title:null, contractors:null, realtors:null, rentals:null},
+      documents: baseDocuments(),
+      activity: [
+        {id:"acq-3", at:now - 86400000, actor:"MREO", important:true, text:"Acquisition completed and the property entered the coordination workspace."},
+        {id:"acq-2", at:now - 90000000, actor:"Auction", important:false, text:`Demo Buyer recorded the winning result at ${money(context.price) || "$385,000"}.`},
+        {id:"acq-1", at:now - 93600000, actor:"Seller", important:false, text:"Demo Seller made the property packet available to the winning buyer."}
+      ]
+    };
+  }
+
+  function loadState() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(stateKey) || "null");
+      if (parsed && parsed.version === 2 && parsed.requests && parsed.documents && parsed.activity) return parsed;
+    } catch {}
+    const fresh = defaultState();
+    localStorage.setItem(stateKey, JSON.stringify(fresh));
+    return fresh;
+  }
+
+  let state = loadState();
+  let role = params.get("role") || localStorage.getItem("mreo:coordination:role") || "buyer";
+  if (!/[^(buyer|seller|provider)]/.test("") && !["buyer","seller","provider"].includes(role)) role = "buyer";
+  let currentServiceKey = params.get("service") || "";
+  let selectedFiles = [];
+
+  function saveState() {
+    localStorage.setItem(stateKey, JSON.stringify(state));
+  }
+
+  function setRole(nextRole) {
+    if (!["buyer","seller","provider"].includes(nextRole)) return;
+    role = nextRole;
+    localStorage.setItem("mreo:coordination:role", role);
+    const url = new URL(location.href);
+    url.searchParams.set("role", role);
+    history.replaceState(null, "", url);
+    renderAll();
+  }
+
+  function addActivity(text, actor = "MREO", important = false) {
+    state.activity.unshift({id:`event-${Date.now()}-${Math.random().toString(16).slice(2)}`, at:Date.now(), actor, important, text});
+    state.activity = state.activity.slice(0, 60);
+  }
+
+  function addDocument(doc) {
+    if (state.documents.some((item) => item.id === doc.id)) return;
+    state.documents.push(doc);
+  }
+
+  function addProviderDocuments(serviceKey, request) {
+    const config = services[serviceKey];
+    if (!config || !request) return;
+    if (["proposal","approved","in-progress","complete"].includes(request.status)) {
+      addDocument(documentRecord(
+        `${serviceKey}-proposal-${request.id}`,
+        `${config.proposalTitle}.txt`,
+        config.eyebrow.replace(/^\d+\s·\s/, ""),
+        ["buyer","seller","provider"],
+        `MREO DEMONSTRATION — ${config.proposalTitle.toUpperCase()}\n\nProperty: ${context.label}\nProvider: ${config.provider}\nClient: ${request.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"}\n\n${config.proposalBody}\n\nStatus: ${statusLabels[request.status]}`,
+        serviceKey
+      ));
+    }
+    if (request.status === "complete") {
+      addDocument(documentRecord(
+        `${serviceKey}-completion-${request.id}`,
+        `${config.completionTitle}.txt`,
+        config.eyebrow.replace(/^\d+\s·\s/, ""),
+        ["buyer","seller","provider"],
+        `MREO DEMONSTRATION — ${config.completionTitle.toUpperCase()}\n\nProperty: ${context.label}\nProvider: ${config.provider}\nCompleted: ${prettyDate(request.updatedAt)}\n\nThe fictional service is marked complete. This closeout record demonstrates the document that would remain attached to the property record after the provider finishes its work.`,
+        serviceKey
+      ));
+    }
+  }
+
+  function transition(serviceKey, nextStatus, actor, text) {
+    const request = state.requests[serviceKey];
+    if (!request) return;
+    request.status = nextStatus;
+    request.updatedAt = Date.now();
+    request.lastTransitionAt = request.updatedAt;
+    if (["matched","needs-info","proposal","approved","in-progress","complete"].includes(nextStatus) && !request.provider) request.provider = services[serviceKey].provider;
+    if (nextStatus === "proposal") request.proposal = {title:services[serviceKey].proposalTitle, amount:services[serviceKey].proposalAmount, body:services[serviceKey].proposalBody, at:Date.now()};
+    addActivity(text || `${services[serviceKey].shortTitle} moved to ${statusLabels[nextStatus]}.`, actor || "MREO", ["proposal","complete"].includes(nextStatus));
+    addProviderDocuments(serviceKey, request);
+    saveState();
+  }
+
+  function advanceRequest(serviceKey) {
+    const request = state.requests[serviceKey];
+    if (!request) { toast("Start this coordination pathway first, then the demo can advance it."); return false; }
+    const next = {
+      "submitted":"matched",
+      "matched":"proposal",
+      "needs-info":"matched",
+      "proposal":"approved",
+      "approved":"in-progress",
+      "in-progress":"complete"
+    }[request.status];
+    if (!next) { toast("This request is already complete."); return false; }
+    const config = services[serviceKey];
+    const messages = {
+      matched:`${config.provider} accepted the request and opened the shared property packet.`,
+      proposal:`${config.provider} returned ${config.proposalTitle.toLowerCase()} for client review.`,
+      approved:`The client approved the ${config.shortTitle.toLowerCase()} response.`,
+      "in-progress":`${config.provider} marked the service in progress.`,
+      complete:`${config.provider} completed the service and uploaded its closeout record.`
+    };
+    transition(serviceKey, next, next === "approved" ? (request.ownerRole === "seller" ? "Seller" : "Buyer") : "Service Partner", messages[next]);
+    renderAll();
+    return true;
+  }
+
+  function autoProgress() {
+    let changed = false;
+    const now = Date.now();
+    Object.entries(state.requests).forEach(([serviceKey, request]) => {
+      if (!request) return;
+      const elapsed = now - (request.lastTransitionAt || request.updatedAt || request.createdAt || now);
+      if (request.status === "submitted" && elapsed > 12000) {
+        transition(serviceKey, "matched", "Service Partner", `${services[serviceKey].provider} automatically accepted the demonstration request.`); changed = true;
+      } else if (request.status === "matched" && elapsed > 18000) {
+        transition(serviceKey, "proposal", "Service Partner", `${services[serviceKey].provider} automatically returned a demonstration proposal / engagement package.`); changed = true;
+      } else if (request.status === "approved" && elapsed > 15000) {
+        transition(serviceKey, "in-progress", "Service Partner", `${services[serviceKey].provider} began the approved demonstration work.`); changed = true;
+      } else if (request.status === "in-progress" && elapsed > 25000) {
+        transition(serviceKey, "complete", "Service Partner", `${services[serviceKey].provider} completed the demonstration service.`); changed = true;
+      }
+    });
+    if (changed) renderAll();
+  }
+
+  function resetDemo() {
+    if (!confirm("Reset this property's coordination demonstration? Auction and seller/buyer test data outside Coordination will not be changed.")) return;
+    state = defaultState();
+    saveState();
+    selectedFiles = [];
+    renderAll();
+    toast("Coordination demonstration reset.");
   }
 
   function fillRecord(prefix) {
-    const title = $(prefix + "-title");
+    const title = $(`${prefix}-title`);
     if (!title) return;
     title.textContent = context.label;
-    const meta = $(prefix + "-meta");
-    if (meta) {
-      const parts = [];
-      if (context.kind === "portfolio" && context.count) parts.push(context.count + " properties");
-      const formatted = money(context.price);
-      if (formatted) parts.push(formatted);
-      meta.textContent = parts.length ? parts.join(" · ") : (context.hasSelection ? "MREO property record" : "Choose a property to attach this coordination workflow.");
-    }
-    const img = $(prefix + "-image");
+    const meta = $(`${prefix}-meta`);
+    const parts = [];
+    if (context.kind === "portfolio" && context.count) parts.push(`${context.count} properties`);
+    if (money(context.price)) parts.push(money(context.price));
+    parts.push("MREO property record");
+    if (meta) meta.textContent = parts.join(" · ");
+    const img = $(`${prefix}-image`);
     if (img) {
-      if (context.image) { img.src = context.image; img.alt = "Property record image for " + context.label; }
+      if (context.image) { img.src = context.image; img.alt = `Property record image for ${context.label}`; img.hidden = false; }
       else img.hidden = true;
     }
-    const badge = $(prefix + "-status");
-    if (badge) badge.textContent = context.hasSelection ? "Property record connected" : "No property selected";
+    const badge = $(`${prefix}-status`);
+    if (badge) badge.textContent = context.hasSelection ? "MREO record connected" : "No property selected";
   }
 
-  function initHub() {
-    if (!$('coordination-grid')) return;
-    fillRecord("coord-record");
-    document.querySelectorAll("[data-service]").forEach((card) => {
-      const service = card.dataset.service;
-      card.href = "coordination-service.html?" + query({service});
-      const saved = status(service);
-      const badge = card.querySelector(".service-status");
-      if (badge) badge.textContent = saved ? "Request started" : "Not started";
-    });
-    const choose = $('coord-choose-property');
-    if (choose) choose.hidden = context.hasSelection;
+  function statusClass(status) { return `status-${String(status || "submitted").replace(/[^a-z-]/g, "")}`; }
+  function activeRequests() { return Object.values(state.requests).filter(Boolean); }
+  function openRequests() { return activeRequests().filter((request) => request.status !== "complete"); }
+  function completeRequests() { return activeRequests().filter((request) => request.status === "complete"); }
+
+  function roleCopy() {
+    if (role === "seller") return {
+      eyebrow:"Seller workspace",
+      title:"Closing, transfer, and seller handoff in one place.",
+      copy:"Follow the winning transaction, supply requested seller material, coordinate title and closing, and use the same property record for any pre-closing repair, representation, or management handoff that remains relevant.",
+      acquisitionEyebrow:"Sale & closing handoff",
+      acquisitionTitle:"The winning buyer is connected to the seller's property record.",
+      acquisitionCopy:"The fictional auction has ended. Download the seller package, follow title requirements, and see the same provider activity that the buyer sees from the other side.",
+      packageLabel:"Download seller closing package"
+    };
+    return {
+      eyebrow:"Buyer workspace",
+      title:"Your acquired property, ready for what comes next.",
+      copy:"Download the acquisition package, start any coordination pathway, review provider responses, approve work, and keep every resulting document attached to the property record.",
+      acquisitionEyebrow:"Acquisition complete",
+      acquisitionTitle:`${context.title || context.address || "This property"} is now in your MREO workspace.`,
+      acquisitionCopy:"The fictional auction and purchase handoff are complete. The core acquisition files are available below and the same property record can now feed every coordination request.",
+      packageLabel:"Download acquisition package"
+    };
   }
 
-  function initService() {
-    const serviceKey = params.get("service");
-    const config = services[serviceKey];
-    if (!config || !$('service-title')) return;
-
-    fillRecord("service-record");
-    $('service-eyebrow').textContent = config.eyebrow;
-    $('service-title').textContent = config.title;
-    $('service-intro').textContent = config.intro;
-    document.title = config.title + " | MREO Coordination";
-    $('service-back').href = "coordination.html?" + query();
-    $('service-workflow').innerHTML = config.steps.map((step) => `<li>${step}</li>`).join("");
-    $('service-form-fields').innerHTML = config.fields;
-    $('service-submit').textContent = config.action;
-    $('provider-preview').innerHTML = `<h3>Example participating providers</h3>` + config.providers.map(([name, desc]) => `<div class="provider-option"><strong>${name}</strong><span>${desc}</span></div>`).join("");
-
-    const form = $('service-request-form');
-    const saved = status(serviceKey);
-    if (saved) {
-      $('service-message').hidden = false;
-      $('service-message').textContent = `Coordination request started ${new Date(saved.at).toLocaleString()}. This demonstration stores the request in this browser.`;
+  const roleDescriptions = {
+    buyer: {
+      title:"Coordinate settlement and transfer after acquisition, then preserve the final closing package.",
+      contractors:"Create an improvement package, receive a contractor proposal, approve the work, and follow closeout.",
+      realtors:"Request market positioning, brokerage representation, showings, listing, or leasing support.",
+      rentals:"Prepare for rent, place a tenant, execute the lease, and connect ongoing property management."
+    },
+    seller: {
+      title:"Supply seller-side documents, follow title requirements, and track the winning transaction through closing.",
+      contractors:"Coordinate agreed pre-closing repairs, property preparation, inspections, cleanup, or other seller-side work.",
+      realtors:"Coordinate local brokerage or transaction support if the property requires representation outside the auction pathway.",
+      rentals:"Use the same property record for any lease, tenant, or management handoff that must be resolved before transfer."
     }
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      if (!context.hasSelection) {
-        $('service-message').hidden = false;
-        $('service-message').textContent = "Choose a property before starting this coordination request.";
-        return;
-      }
-      const data = Object.fromEntries(new FormData(form).entries());
-      localStorage.setItem(`mreo:coordination:${context.key}:${serviceKey}`, JSON.stringify({at:Date.now(), data}));
-      $('service-message').hidden = false;
-      $('service-message').textContent = "Coordination request created for this property. In a connected version, MREO would route the property packet and request to participating providers and track the workflow here.";
-      $('service-message').scrollIntoView({behavior:"smooth", block:"nearest"});
-    });
+  };
+
+  function renderDocumentLibrary(container, audience, serviceFilter = "") {
+    if (!container) return;
+    const docs = state.documents.filter((doc) => doc.audience.includes(audience) && (!serviceFilter || doc.service === serviceFilter || doc.id === "property-packet"));
+    if (!docs.length) { container.innerHTML = '<div class="document-empty">No documents are available yet.</div>'; return; }
+    container.innerHTML = docs.slice().reverse().map((doc) => `
+      <div class="document-item">
+        <div class="document-main"><strong>${esc(doc.name)}</strong><span>${esc(doc.category)} · ${shortDate(doc.createdAt)}</span></div>
+        <button type="button" class="document-download" data-document-id="${esc(doc.id)}">Download</button>
+      </div>`).join("");
+    container.querySelectorAll("[data-document-id]").forEach((button) => button.addEventListener("click", () => downloadDocument(button.dataset.documentId)));
   }
 
-  initHub();
-  initService();
+  function downloadDocument(id) {
+    const doc = state.documents.find((item) => item.id === id);
+    if (!doc) return;
+    const blob = new Blob([doc.body || `MREO demonstration document\n\n${doc.name}`], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = doc.name.replace(/[^a-z0-9._ -]/gi, "-");
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadPackage() {
+    const audience = role === "seller" ? "seller" : "buyer";
+    const docs = state.documents.filter((doc) => doc.audience.includes(audience));
+    const body = docs.map((doc) => `========================================\n${doc.name}\n========================================\n${doc.body}`).join("\n\n");
+    const blob = new Blob([body], {type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = role === "seller" ? "MREO-Seller-Closing-Package.txt" : "MREO-Acquisition-Package.txt";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function renderTimeline(container, serviceFilter = "") {
+    if (!container) return;
+    const items = state.activity.filter((item) => !serviceFilter || item.service === serviceFilter || item.text.toLowerCase().includes((services[serviceFilter]?.shortTitle || "").toLowerCase())).slice(0, 12);
+    container.innerHTML = items.length ? items.map((item) => `
+      <div class="timeline-event${item.important ? " is-important" : ""}">
+        <span class="timeline-dot" aria-hidden="true"></span>
+        <div class="timeline-content"><strong>${esc(item.actor)} · ${esc(item.text)}</strong><time>${prettyDate(item.at)}</time></div>
+      </div>`).join("") : '<div class="document-empty">No activity yet.</div>';
+  }
+
+  function renderActionCenter() {
+    const container = $("client-action-center");
+    if (!container) return;
+    const cards = [];
+    Object.entries(state.requests).forEach(([key, request]) => {
+      if (!request) return;
+      const config = services[key];
+      if (request.status === "proposal") cards.push({title:`${config.shortTitle}: proposal ready`, copy:"A provider response is waiting for client approval.", key});
+      else if (request.status === "needs-info") cards.push({title:`${config.shortTitle}: information requested`, copy:"The participating company needs another client response before continuing.", key});
+      else if (request.status === "submitted") cards.push({title:`${config.shortTitle}: waiting for provider`, copy:"The request has been submitted and is waiting to be accepted.", key});
+      else if (request.status === "matched") cards.push({title:`${config.shortTitle}: provider reviewing`, copy:`${config.provider} is reviewing the property packet.`, key});
+      else if (request.status === "approved") cards.push({title:`${config.shortTitle}: approved`, copy:"The provider can now schedule or begin the approved service.", key});
+      else if (request.status === "in-progress") cards.push({title:`${config.shortTitle}: in progress`, copy:"Provider work is underway and will generate a closeout record when complete.", key});
+    });
+    if (!cards.length) {
+      container.innerHTML = '<div class="action-card"><strong>No client actions are waiting.</strong><p>Start any pathway above. Once a provider sends a proposal or requests information, it will appear here.</p></div>';
+      return;
+    }
+    container.innerHTML = cards.map((card) => `<div class="action-card"><strong>${esc(card.title)}</strong><p>${esc(card.copy)}</p><a href="coordination-service.html?${query({service:card.key, role})}">Open workflow →</a></div>`).join("");
+  }
+
+  function renderHub() {
+    if (!$("coordination-grid")) return;
+    fillRecord("coord-record");
+    document.querySelectorAll("[data-role]").forEach((button) => button.setAttribute("aria-pressed", button.dataset.role === role ? "true" : "false"));
+    const client = $("client-workspace");
+    const provider = $("provider-workspace");
+    if (client) client.hidden = role === "provider";
+    if (provider) provider.hidden = role !== "provider";
+
+    if (role !== "provider") {
+      const copy = roleCopy();
+      $("role-workspace-eyebrow").textContent = copy.eyebrow;
+      $("role-workspace-title").textContent = copy.title;
+      $("role-workspace-copy").textContent = copy.copy;
+      $("acquisition-eyebrow").textContent = copy.acquisitionEyebrow;
+      $("acquisition-heading").textContent = copy.acquisitionTitle;
+      $("acquisition-copy").textContent = copy.acquisitionCopy;
+      $("download-acquisition-package").textContent = copy.packageLabel;
+      const details = role === "seller" ? [
+        ["Seller", state.acquisition.seller], ["Winning buyer", state.acquisition.buyer], ["Sale amount", money(state.acquisition.price)], ["Auction handoff", "Complete"], ["Transfer status", state.requests.title ? statusLabels[state.requests.title.status] : "Not started"]
+      ] : [
+        ["Owner", state.acquisition.buyer], ["Purchase price", money(state.acquisition.price)], ["Acquisition status", "Complete"], ["Acquired", shortDate(state.acquisition.completedAt)], ["Property record", context.key]
+      ];
+      $("acquisition-details").innerHTML = details.map(([label,value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("");
+      $("coord-stat-open").textContent = String(openRequests().length);
+      $("coord-stat-docs").textContent = String(state.documents.filter((doc) => doc.audience.includes(role)).length);
+      $("coord-stat-complete").textContent = String(completeRequests().length);
+      renderDocumentLibrary($("coord-document-library"), role);
+      renderActionCenter();
+      renderTimeline($("coordination-timeline"));
+
+      document.querySelectorAll("#coordination-grid [data-service]").forEach((card) => {
+        const serviceKey = card.dataset.service;
+        const request = state.requests[serviceKey];
+        card.href = `coordination-service.html?${query({service:serviceKey, role})}`;
+        const badge = card.querySelector(".service-status");
+        if (badge) badge.textContent = request ? statusLabels[request.status] : "Not started";
+        card.classList.toggle("is-active", !!request && request.status !== "complete");
+        card.classList.toggle("is-complete", request?.status === "complete");
+        const description = card.querySelector("[data-role-description]");
+        if (description && roleDescriptions[role]?.[serviceKey]) description.textContent = roleDescriptions[role][serviceKey];
+      });
+    } else {
+      $("role-workspace-eyebrow").textContent = "Service Partner workspace";
+      $("role-workspace-title").textContent = "One provider inbox for work attached to the property record.";
+      $("role-workspace-copy").textContent = "See requests exactly as they were submitted by the buyer or seller, open the shared property packet, respond, upload outputs, and advance each service through completion.";
+      renderProviderHub();
+    }
+  }
+
+  function renderProviderHub() {
+    const specialty = $("provider-specialty")?.value || "all";
+    const entries = Object.entries(state.requests).filter(([key, request]) => request && (specialty === "all" || specialty === key));
+    const queue = $("provider-queue");
+    if (queue) {
+      if (!entries.length) queue.innerHTML = '<div class="provider-empty-queue"><strong>No incoming requests yet.</strong><p>Switch to Buyer or Seller, open any coordination pathway, and submit it. The exact request will then appear in this provider queue.</p></div>';
+      else queue.innerHTML = entries.map(([key, request]) => {
+        const config = services[key];
+        const attachments = request.attachments?.length || 0;
+        return `<article class="provider-job">
+          <div class="provider-job-main">
+            <div class="provider-job-topline"><span class="status-pill ${statusClass(request.status)}">${esc(statusLabels[request.status])}</span><span class="coordination-number">${esc(config.eyebrow)}</span></div>
+            <h3>${esc(config.shortTitle)} · ${esc(context.title || context.address)}</h3>
+            <p>Submitted by ${request.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"}. ${esc(statusNotes[request.status])}</p>
+            <div class="provider-job-meta"><span>${attachments} attachment${attachments === 1 ? "" : "s"}</span><span>${esc(request.provider || "Awaiting provider match")}</span><span>Updated ${esc(prettyDate(request.updatedAt))}</span></div>
+          </div>
+          <div class="provider-job-action"><a class="primary-button button-blue" href="coordination-service.html?${query({service:key, role:"provider"})}">Open request →</a></div>
+        </article>`;
+      }).join("");
+    }
+    const requests = entries.map(([,request]) => request);
+    if ($("provider-inbox-count")) $("provider-inbox-count").textContent = String(requests.filter((r) => r.status !== "complete").length);
+    if ($("provider-waiting-count")) $("provider-waiting-count").textContent = String(requests.filter((r) => ["needs-info","proposal"].includes(r.status)).length);
+    if ($("provider-complete-count")) $("provider-complete-count").textContent = String(requests.filter((r) => r.status === "complete").length);
+    renderDocumentLibrary($("provider-document-library"), "provider");
+    renderTimeline($("provider-timeline"));
+  }
+
+  function humanize(key) {
+    return String(key || "").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[-_]+/g, " ").replace(/^./, (c) => c.toUpperCase());
+  }
+
+  function requestSummaryHtml(request) {
+    if (!request) return "";
+    const rows = [
+      ["Submitted by", request.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"],
+      ["Submitted", prettyDate(request.createdAt)],
+      ...Object.entries(request.data || {}).filter(([,value]) => value).map(([key,value]) => [humanize(key), String(value)]),
+      ["Supporting files", request.attachments?.length ? request.attachments.map((file) => file.name).join(", ") : "None"]
+    ];
+    return rows.map(([label,value]) => `<div class="request-summary-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
+  }
+
+  function workflowStepIndex(status, total) {
+    if (!status) return 0;
+    const map = {submitted:1, matched:2, "needs-info":2, proposal:3, approved:4, "in-progress":4, complete:total};
+    return Math.min(total, map[status] ?? 0);
+  }
+
+  function renderWorkflow(config, request) {
+    const list = $("service-workflow");
+    if (!list) return;
+    const index = workflowStepIndex(request?.status, config.steps.length);
+    list.innerHTML = config.steps.map((step, i) => `<li class="${request?.status === "complete" || i < index ? "is-complete" : i === index ? "is-current" : ""}">${esc(step)}</li>`).join("");
+    if ($("workflow-current-status")) $("workflow-current-status").textContent = request ? statusLabels[request.status] : "Not started";
+    if ($("workflow-current-note")) $("workflow-current-note").textContent = request ? statusNotes[request.status] : "Create a request to begin this pathway.";
+  }
+
+  function renderSelectedFiles() {
+    const container = $("service-selected-files");
+    if (!container) return;
+    container.innerHTML = selectedFiles.length ? selectedFiles.map((file) => `<span class="selected-file-chip">${esc(file.name)} · ${Math.max(1, Math.round(file.size / 1024))} KB</span>`).join("") : '<span class="field-help">No supporting files selected.</span>';
+  }
+
+  function renderClientRequest(config, request) {
+    const form = $("service-request-form");
+    const statusCard = $("client-request-status");
+    if (!form || !statusCard) return;
+    if (!request) {
+      form.hidden = false;
+      statusCard.hidden = true;
+      $("service-form-fields").innerHTML = config.fields;
+      $("service-submit").textContent = config.action;
+      $("request-title").textContent = role === "seller" ? `Submit seller-side ${config.shortTitle.toLowerCase()} request` : `Submit ${config.shortTitle.toLowerCase()} request`;
+      $("request-intro").textContent = config.clientIntro;
+      renderSelectedFiles();
+      return;
+    }
+    form.hidden = true;
+    statusCard.hidden = false;
+    $("client-status-pill").className = `status-pill ${statusClass(request.status)}`;
+    $("client-status-pill").textContent = statusLabels[request.status];
+    $("client-status-title").textContent = request.status === "proposal" ? config.proposalTitle : `${config.shortTitle} · ${statusLabels[request.status]}`;
+    $("client-status-copy").textContent = statusNotes[request.status];
+    $("client-request-summary").innerHTML = requestSummaryHtml(request);
+    const actions = $("client-request-actions");
+    actions.innerHTML = "";
+    if (request.status === "needs-info") {
+      actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="provide-info">Provide requested information</button>';
+    } else if (request.status === "proposal") {
+      const amount = request.proposal?.amount ? ` · ${money(request.proposal.amount)}` : "";
+      $("client-status-copy").textContent = `${request.proposal?.body || config.proposalBody}${amount}`;
+      actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="approve">Approve provider response</button><button type="button" class="secondary-button" data-client-action="request-change">Request a change</button>';
+    } else if (request.status === "complete") {
+      const completionDoc = state.documents.find((doc) => doc.id === `${currentServiceKey}-completion-${request.id}`);
+      if (completionDoc) actions.innerHTML = `<button type="button" class="secondary-button" data-download-document="${esc(completionDoc.id)}">Download completion record</button>`;
+    }
+    actions.querySelectorAll("[data-client-action]").forEach((button) => button.addEventListener("click", () => {
+      if (button.dataset.clientAction === "provide-info") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} supplied the requested additional information.`);
+      if (button.dataset.clientAction === "approve") transition(currentServiceKey, "approved", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} approved the provider response.`);
+      if (button.dataset.clientAction === "request-change") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} requested a revision to the provider response.`);
+      renderAll();
+    }));
+    actions.querySelectorAll("[data-download-document]").forEach((button) => button.addEventListener("click", () => downloadDocument(button.dataset.downloadDocument)));
+  }
+
+  function renderProviderRequest(config, request) {
+    const empty = $("provider-empty-state");
+    const detail = $("provider-request-detail");
+    if (!empty || !detail) return;
+    if (!request) { empty.hidden = false; detail.hidden = true; return; }
+    empty.hidden = true; detail.hidden = false;
+    $("provider-status-pill").className = `status-pill ${statusClass(request.status)}`;
+    $("provider-status-pill").textContent = statusLabels[request.status];
+    $("provider-request-name").textContent = `${config.shortTitle} · ${context.title || context.address}`;
+    $("provider-company-name").textContent = request.provider || "Awaiting provider match";
+    $("provider-request-summary").innerHTML = requestSummaryHtml(request);
+    const attachments = request.attachments || [];
+    $("provider-attachment-list").innerHTML = attachments.length ? attachments.map((file) => `<div class="attachment-item">${esc(file.name)} · ${esc(file.type || "file")} · ${Math.max(1, Math.round(file.size / 1024))} KB</div>`).join("") : '<div class="document-empty">No client attachments were included. The core MREO property packet remains available below.</div>';
+    const guidance = $("provider-action-guidance");
+    const buttons = $("provider-action-buttons");
+    buttons.innerHTML = "";
+    const addButton = (label, action, primary = false, disabled = false) => {
+      const button = document.createElement("button");
+      button.type = "button"; button.textContent = label; button.dataset.providerAction = action; button.classList.toggle("is-primary", primary); button.disabled = disabled; buttons.appendChild(button);
+    };
+    if (request.status === "submitted") {
+      guidance.textContent = "Review the property packet, client answers, and attachments. Accept the job or request more information.";
+      addButton("Accept request", "accept", true); addButton("Request information", "needs-info");
+    } else if (request.status === "matched") {
+      guidance.textContent = "The request is accepted. Return the demonstration proposal / engagement package when review is complete.";
+      addButton("Send provider response", "proposal", true); addButton("Request information", "needs-info");
+    } else if (request.status === "needs-info") {
+      guidance.textContent = "Waiting for the buyer or seller to supply the requested information.";
+      addButton("Waiting for client", "wait", false, true);
+    } else if (request.status === "proposal") {
+      guidance.textContent = "Provider response sent. Waiting for the client to approve or request a revision.";
+      addButton("Waiting for approval", "wait", false, true);
+    } else if (request.status === "approved") {
+      guidance.textContent = "The client approved the response. Begin or schedule the service.";
+      addButton("Start work", "in-progress", true);
+    } else if (request.status === "in-progress") {
+      guidance.textContent = "Work is in progress. When finished, complete the job and publish the closeout record.";
+      addButton("Mark complete", "complete", true); addButton("Request information", "needs-info");
+    } else {
+      guidance.textContent = "This service is complete. The closeout package is attached to the shared property record.";
+      addButton("Complete", "wait", false, true);
+    }
+    buttons.querySelectorAll("[data-provider-action]").forEach((button) => button.addEventListener("click", () => {
+      const action = button.dataset.providerAction;
+      if (action === "wait") return;
+      const actor = "Service Partner";
+      if (action === "accept") transition(currentServiceKey, "matched", actor, `${config.provider} accepted the request and opened the shared property packet.`);
+      if (action === "needs-info") transition(currentServiceKey, "needs-info", actor, `${config.provider} requested additional client information.`);
+      if (action === "proposal") transition(currentServiceKey, "proposal", actor, `${config.provider} sent ${config.proposalTitle.toLowerCase()} to the client.`);
+      if (action === "in-progress") transition(currentServiceKey, "in-progress", actor, `${config.provider} started the approved service.`);
+      if (action === "complete") transition(currentServiceKey, "complete", actor, `${config.provider} completed the service and published its closeout record.`);
+      renderAll();
+    }));
+  }
+
+  function renderService() {
+    const config = services[currentServiceKey];
+    if (!config || !$("service-title")) return;
+    fillRecord("service-record");
+    document.querySelectorAll("[data-role]").forEach((button) => button.setAttribute("aria-pressed", button.dataset.role === role ? "true" : "false"));
+    $("service-eyebrow").textContent = config.eyebrow;
+    $("service-title").textContent = config.title;
+    $("service-intro").textContent = config.clientIntro;
+    document.title = `${config.title} | MREO Coordination`;
+    $("service-back").href = `coordination.html?${query({role})}`;
+    const request = state.requests[currentServiceKey];
+    renderWorkflow(config, request);
+
+    const clientPanel = $("client-service-panel");
+    const providerPanel = $("provider-service-panel");
+    clientPanel.hidden = role === "provider";
+    providerPanel.hidden = role !== "provider";
+    if (role === "provider") renderProviderRequest(config, request);
+    else renderClientRequest(config, request);
+
+    renderDocumentLibrary($("service-document-library"), role === "provider" ? "provider" : role, currentServiceKey);
+    renderServiceTimeline();
+  }
+
+  function renderServiceTimeline() {
+    const container = $("service-timeline");
+    if (!container) return;
+    const config = services[currentServiceKey];
+    const items = state.activity.filter((item) => {
+      const text = item.text.toLowerCase();
+      return text.includes(config.shortTitle.toLowerCase()) || text.includes((config.provider || "").split(" · ")[0].toLowerCase()) || text.includes(config.title.toLowerCase());
+    }).slice(0, 12);
+    container.innerHTML = items.length ? items.map((item) => `<div class="timeline-event${item.important ? " is-important" : ""}"><span class="timeline-dot"></span><div class="timeline-content"><strong>${esc(item.actor)} · ${esc(item.text)}</strong><time>${prettyDate(item.at)}</time></div></div>`).join("") : '<div class="document-empty">This pathway has no activity yet. Submit a request to begin.</div>';
+  }
+
+  function submitServiceRequest(event) {
+    event.preventDefault();
+    const config = services[currentServiceKey];
+    const form = event.currentTarget;
+    if (!config || !form.reportValidity()) return;
+    if (state.requests[currentServiceKey]) { toast("This property already has an active request for this pathway."); return; }
+    const raw = new FormData(form);
+    const data = {};
+    raw.forEach((value, key) => { if (key !== "attachments" && typeof value === "string") data[key] = value; });
+    const request = {
+      id:`${currentServiceKey}-${Date.now()}`,
+      service:currentServiceKey,
+      ownerRole: role === "seller" ? "seller" : "buyer",
+      status:"submitted",
+      createdAt:Date.now(),
+      updatedAt:Date.now(),
+      lastTransitionAt:Date.now(),
+      provider:"",
+      proposal:null,
+      data,
+      attachments:selectedFiles.map((file) => ({name:file.name, type:file.type || "file", size:file.size || 0, lastModified:file.lastModified || 0}))
+    };
+    state.requests[currentServiceKey] = request;
+    addActivity(`${role === "seller" ? "Demo Seller" : "Demo Buyer"} submitted a ${config.shortTitle.toLowerCase()} request with ${request.attachments.length} supporting file${request.attachments.length === 1 ? "" : "s"}.`, role === "seller" ? "Seller" : "Buyer", true);
+    saveState();
+    selectedFiles = [];
+    renderAll();
+    toast("Request submitted. Switch to Service Partner to see it arrive in the provider inbox.");
+  }
+
+  function toast(message) {
+    let el = document.querySelector(".coord-toast");
+    if (!el) { el = document.createElement("div"); el.className = "coord-toast"; document.body.appendChild(el); }
+    el.textContent = message;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => el.remove(), 4200);
+  }
+
+  function wireOnce() {
+    document.querySelectorAll("[data-role]").forEach((button) => {
+      if (button.dataset.roleWired) return;
+      button.dataset.roleWired = "1";
+      button.addEventListener("click", () => setRole(button.dataset.role));
+    });
+    $("coord-reset-demo")?.addEventListener("click", resetDemo);
+    $("coord-advance-demo")?.addEventListener("click", () => {
+      const entry = Object.entries(state.requests).find(([,request]) => request && request.status !== "complete");
+      if (!entry) { toast("Start a coordination pathway first. Then this control advances the active fictional workflow."); return; }
+      advanceRequest(entry[0]);
+    });
+    $("download-acquisition-package")?.addEventListener("click", downloadPackage);
+    $("provider-specialty")?.addEventListener("change", renderProviderHub);
+    $("service-advance-demo")?.addEventListener("click", () => currentServiceKey && advanceRequest(currentServiceKey));
+    const form = $("service-request-form");
+    if (form && !form.dataset.wired) { form.dataset.wired = "1"; form.addEventListener("submit", submitServiceRequest); }
+    const attachmentInput = $("service-attachments");
+    if (attachmentInput && !attachmentInput.dataset.wired) {
+      attachmentInput.dataset.wired = "1";
+      attachmentInput.addEventListener("change", () => { selectedFiles = [...(attachmentInput.files || [])]; renderSelectedFiles(); });
+    }
+  }
+
+  function renderAll() {
+    renderHub();
+    renderService();
+    wireOnce();
+  }
+
+  renderAll();
+  setInterval(autoProgress, 4000);
 })();
