@@ -3,13 +3,14 @@ name: Fix seller media accumulation
 on:
   push:
     branches: [main]
+    paths:
+      - .github/workflows/fix-seller-media-accumulation.yml
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: ${{ github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
