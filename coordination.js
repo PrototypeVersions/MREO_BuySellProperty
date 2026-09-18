@@ -816,7 +816,12 @@ Property: ${context.label}
     addActivity(`${role === "seller" ? "Demo Seller" : "Demo Buyer"} submitted a ${config.shortTitle.toLowerCase()} request with ${request.attachments.length} supporting file${request.attachments.length === 1 ? "" : "s"}.`, role === "seller" ? "Seller" : "Buyer", true);
     saveState();
     selectedFiles = [];
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     renderAll();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const target = document.getElementById("service-attention-v5") || document.querySelector(".service-demo-strip");
+      target?.scrollIntoView({behavior:"smooth", block:"start"});
+    }));
     toast("Request submitted. Switch to Service Partner to see it arrive in the provider inbox.");
   }
 
