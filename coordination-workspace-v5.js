@@ -376,7 +376,7 @@
     queue.dataset.v5Key=key;
     queue.innerHTML=rows.map(row=>`
       <article class="provider-job provider-job-v5" data-v5-provider-row>
-        <div class="provider-job-signal"><span class="mini-attention-light ${row.actionNeeded?"is-on":"is-off"}"></span><strong>${row.actionNeeded?"Action needed":"Waiting"}</strong></div>
+        <div class="provider-job-signal"><strong>${row.actionNeeded?"Action needed":"Waiting"}</strong></div>
         <div class="provider-job-main">
           <div class="provider-job-topline"><span class="coordination-number">${esc(serviceLabels[row.service]?.eyebrow||row.label)}</span><span>${esc(row.provider)}</span></div>
           <h3>${esc(row.property)}</h3>
@@ -396,6 +396,7 @@
     const providerSummary=document.querySelector(".provider-summary-grid"); if(providerSummary&&!providerSummary.hidden)providerSummary.hidden=true;
     const action=$("client-action-center")?.closest("article"); if(action)action.hidden=true;
     const timeline=$("coordination-timeline")?.closest("article"); if(timeline)timeline.hidden=true;
+    const clientLower=action?.closest(".lower-workspace-grid"); if(clientLower&&[...clientLower.children].every(child=>child.hidden))clientLower.hidden=true;
     const providerTimeline=$("provider-timeline")?.closest("article"); if(providerTimeline)providerTimeline.hidden=true;
     const serviceTimeline=$("service-timeline")?.closest("article"); if(serviceTimeline)serviceTimeline.hidden=true;
   }
