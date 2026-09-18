@@ -140,7 +140,8 @@ test("title workflow requires buyer closing participation",async({page})=>{
  await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-title-buyer"));
  await page.reload();
  await expect(page.locator("#acquisition-heading")).toContainText("Seller acceptance and closing");
- await expect(page.getByRole("link",{name:"What comes next ↓"})).toBeVisible();\n await page.locator('[data-service="title"]').click();
+ await expect(page.getByRole("link",{name:"What comes next ↓"})).toBeVisible();
+ await page.locator('[data-service="title"]').click();
  await expect(page.locator('input[name="legalName"]')).toBeVisible();
  await expect(page.locator('select[name="funding"]')).toBeVisible();
  await page.locator("#service-submit").click();
