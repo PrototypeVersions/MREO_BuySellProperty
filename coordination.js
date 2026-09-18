@@ -251,6 +251,11 @@ Property: ${context.label}
   }
 
   function loadState() {
+    const demoResetMarker = "mreo:coordination:default-demo-clean-v1";
+    if (context.isDefaultDemo && localStorage.getItem(demoResetMarker) !== "1") {
+      localStorage.removeItem(stateKey);
+      localStorage.setItem(demoResetMarker, "1");
+    }
     try {
       const parsed = JSON.parse(localStorage.getItem(stateKey) || "null");
       if (parsed && parsed.version === 3 && parsed.requests && parsed.documents && parsed.activity) return parsed;
