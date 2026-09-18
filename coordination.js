@@ -802,7 +802,7 @@ Property: ${context.label}
       createdAt:Date.now(),
       updatedAt:Date.now(),
       lastTransitionAt:Date.now(),
-      provider:"",
+      provider:data.providerPreference && data.providerPreference !== "Match me with a participating provider" ? data.providerPreference : "",
       proposal:null,
       data,
       attachments:selectedFiles.map((file) => ({name:file.name, type:file.type || "file", size:file.size || 0, lastModified:file.lastModified || 0}))
