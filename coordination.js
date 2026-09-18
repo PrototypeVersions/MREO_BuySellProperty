@@ -299,7 +299,7 @@ Property: ${context.label}
         `${config.proposalTitle}.txt`,
         config.eyebrow.replace(/^\d+\s·\s/, ""),
         ["buyer","seller","provider"],
-        `MREO DEMONSTRATION — ${config.proposalTitle.toUpperCase()}\n\nProperty: ${context.label}\nProvider: ${config.provider}\nClient: ${request.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"}\n\n${config.proposalBody}\n\nStatus: ${statusLabels[request.status]}`,
+        `MREO DEMONSTRATION — ${config.proposalTitle.toUpperCase()}\n\nProperty: ${context.label}\nProvider: ${request.provider || config.provider}\nClient: ${request.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"}\n\n${config.proposalBody}\n\nStatus: ${statusLabels[request.status]}`,
         serviceKey
       ));
     }
@@ -309,7 +309,7 @@ Property: ${context.label}
         `${config.completionTitle}.txt`,
         config.eyebrow.replace(/^\d+\s·\s/, ""),
         ["buyer","seller","provider"],
-        `MREO DEMONSTRATION — ${config.completionTitle.toUpperCase()}\n\nProperty: ${context.label}\nProvider: ${config.provider}\nCompleted: ${prettyDate(request.updatedAt)}\n\nThe fictional service is marked complete. This closeout record demonstrates the document that would remain attached to the property record after the provider finishes its work.`,
+        `MREO DEMONSTRATION — ${config.completionTitle.toUpperCase()}\n\nProperty: ${context.label}\nProvider: ${request.provider || config.provider}\nCompleted: ${prettyDate(request.updatedAt)}\n\nThe fictional service is marked complete. This closeout record demonstrates the document that would remain attached to the property record after the provider finishes its work.`,
         serviceKey
       ));
     }
