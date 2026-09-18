@@ -26,7 +26,7 @@
     if (auction.kind === "portfolio") query.set("count", String(auction.portfolioCount || auction.portfolio?.length || 0));
     query.set("role", view);
     query.set("stage", auction.saleCompleted ? "complete" : "won");
-    if (account?.name) query.set("accountName", account.name);
+    if (account?.name) { query.set("accountName", account.name); query.set("accountRole", view); }
     if (account?.email) query.set("accountEmail", account.email);
     const details = account?.submission?.details || {};
     const phone = details[view === "seller" ? "sellerPhone" : "buyerPhone"];
