@@ -17,7 +17,7 @@
     return $("view-seller")?.getAttribute("aria-pressed") === "true" ? "seller" : "buyer";
   }
 
-  function buildWorkspaceUrl(auction, view, amount) {
+  function buildWorkspaceUrl(auction, view, amount, account) {
     const query = new URLSearchParams();
     query.set("type", auction.kind === "portfolio" ? "portfolio" : "property");
     query.set("auction", auction.id);
@@ -26,6 +26,15 @@
     if (auction.kind === "portfolio") query.set("count", String(auction.portfolioCount || auction.portfolio?.length || 0));
     query.set("role", view);
     query.set("stage", auction.saleCompleted ? "complete" : "won");
+    if (account?.name) query.set("accountName", account.name);
+    if (account?.email) query.set("accountEmail", account.email);
+    const details = account?.submission?.details || {};
+    const phone = details[view === "seller" ? "sellerPhone" : "buyerPhone"];
+    const purchaseMethod = details.buyerPurchaseMethod || "";
+    const purchaseTimeline = details[view === "seller" ? "saleTimeline" : "buyerTimeline"] || "";
+    if (phone) query.set("accountPhone", phone);
+    if (purchaseMethod) query.set("purchaseMethod", purchaseMethod);
+    if (purchaseTimeline) query.set("purchaseTimeline", purchaseTimeline);
     return `coordination.html?${query.toString()}`;
   }
 
@@ -65,7 +74,7 @@
 
       const top = C.highest(auction);
       const amount = cashNumber(top?.amount);
-      const link = buildWorkspaceUrl(auction, view, amount);
+      const link = buildWorkspaceUrl(auction, view, amount, result.account);
       const seller = view === "seller";
       const complete = !!auction.saleCompleted;
 
@@ -77,7 +86,7 @@
           ? "Follow the final transfer record and any remaining provider activity from the seller side."
           : "The winning buyer is selected. Open the shared workspace to follow acceptance, title requirements, seller obligations, and closing.")
         : (complete
-          ? "The property is now in your MREO workspace for Transfer, Improve, Represent, and Rent / Manage."
+          ? "The property is now in your MREO workspace for Title / Settlement, Contractors, Realtors, and Rent / Manage."
           : "Seller acceptance and closing are still required. Open the transaction workspace to begin title / settlement and see exactly what needs your attention next.");
       const label = seller
         ? (complete ? "Open seller property workspace →" : "Continue seller closing →")
