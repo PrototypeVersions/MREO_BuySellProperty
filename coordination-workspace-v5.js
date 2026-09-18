@@ -19,6 +19,7 @@
   })();
   const demoJobStateKey="mreo:coordination:provider-demo:v1";
   const queryProfile = {
+    role:params.get("accountRole")||"",
     name:params.get("accountName")||"",
     email:params.get("accountEmail")||"",
     phone:params.get("accountPhone")||"",
@@ -78,12 +79,13 @@
       try{if(globalThis.MreoService?.me)account=await globalThis.MreoService.me(currentRole);}catch{}
       const details=account?.submission?.details||{};
       const isBuyer=currentRole==="buyer";
+      const useQuery=!queryProfile.role||queryProfile.role===currentRole;
       const merged={
-        name:queryProfile.name||account?.name||(isBuyer?"Demo Buyer":"Demo Seller"),
-        email:queryProfile.email||account?.email||"",
-        phone:queryProfile.phone||details[isBuyer?"buyerPhone":"sellerPhone"]||"",
-        purchaseMethod:queryProfile.purchaseMethod||details.buyerPurchaseMethod||"",
-        timeline:queryProfile.timeline||details[isBuyer?"buyerTimeline":"saleTimeline"]||""
+        name:(useQuery?queryProfile.name:"")||account?.name||(isBuyer?"Demo Buyer":"Demo Seller"),
+        email:(useQuery?queryProfile.email:"")||account?.email||"",
+        phone:(useQuery?queryProfile.phone:"")||details[isBuyer?"buyerPhone":"sellerPhone"]||"",
+        purchaseMethod:(useQuery?queryProfile.purchaseMethod:"")||details.buyerPurchaseMethod||"",
+        timeline:(useQuery?queryProfile.timeline:"")||details[isBuyer?"buyerTimeline":"saleTimeline"]||""
       };
       const state=loadState();
       if(state?.acquisition&&merged.name){
