@@ -116,8 +116,8 @@
     const specialty=$("provider-specialty");
     if(specialty){
       [...specialty.options].forEach(option=>{
-        if(option.value==="contractors")option.textContent="Contractors";
-        if(option.value==="realtors")option.textContent="Realtors";
+        if(option.value==="contractors"&&option.textContent!=="Contractors")option.textContent="Contractors";
+        if(option.value==="realtors"&&option.textContent!=="Realtors")option.textContent="Realtors";
       });
     }
   }
@@ -131,18 +131,20 @@
     if(section&&!section.id)section.id="coordination-pathways";
   }
 
+  function setTextIfChanged(element,value){if(element&&element.textContent!==value)element.textContent=value;}
   function setAttention(card,data){
     if(!card)return;
     card.classList.toggle("is-on",!!data.on);
     card.classList.toggle("is-off",!data.on);
     const light=card.querySelector(".attention-light");
-    if(light)light.setAttribute("aria-label",data.on?"Action needed":"Waiting");
+    const lightLabel=data.on?"Action needed":"Waiting";
+    if(light&&light.getAttribute("aria-label")!==lightLabel)light.setAttribute("aria-label",lightLabel);
     const state=card.querySelector(".attention-state");
-    if(state)state.textContent=data.on?"Action needed":"Waiting";
+    setTextIfChanged(state,lightLabel);
     const title=card.querySelector(".attention-title");
-    if(title)title.textContent=data.title;
+    setTextIfChanged(title,data.title);
     const copy=card.querySelector(".attention-copy");
-    if(copy)copy.textContent=data.copy;
+    setTextIfChanged(copy,data.copy);
     const link=card.querySelector(".attention-link");
     if(link){
       if(data.href){link.hidden=false;link.href=data.href;link.textContent=data.link||"Open →";}
@@ -208,8 +210,8 @@
     }
     const currentRole=role(),state=loadState();
     setAttention(card,currentRole==="provider"?attentionForProvider(state):attentionForClient(state,currentRole));
-    document.querySelector(".workspace-stats")?.setAttribute("hidden","");
-    document.querySelector(".provider-summary-grid")?.setAttribute("hidden","");
+    const workspaceStats=document.querySelector(".workspace-stats"); if(workspaceStats&&!workspaceStats.hidden)workspaceStats.hidden=true;
+    const providerSummary=document.querySelector(".provider-summary-grid"); if(providerSummary&&!providerSummary.hidden)providerSummary.hidden=true;
     const actionCenter=$("client-action-center")?.closest("article"); if(actionCenter)actionCenter.hidden=true;
     const timeline=$("coordination-timeline")?.closest("article"); if(timeline)timeline.hidden=true;
     const providerTimeline=$("provider-timeline")?.closest("article"); if(providerTimeline)providerTimeline.hidden=true;
@@ -285,7 +287,7 @@
     const state=loadState();
     if(state?.requests?.[serviceKey])return;
     const container=$("service-form-fields");
-    if(!container||container.dataset.v5PrefillPending==="1")return;
+    if(!container||container.dataset.v5PrefillPending==="1"||container.querySelector(".carried-forward-panel"))return;
     container.dataset.v5PrefillPending="1";
     profileFor(role()).then(profile=>{
       container.dataset.v5PrefillPending="";
@@ -384,14 +386,14 @@
         <div class="provider-job-action"><a class="primary-button button-blue" href="${row.href}">${row.actual?"Open request →":"Open provider job →"}</a></div>
       </article>`).join("");
     const heading=$("provider-queue-title");
-    if(heading)heading.textContent="Provider work queue";
+    setTextIfChanged(heading,"Provider work queue");
     const intro=$("provider-inbox-heading")?.nextElementSibling;
-    if(intro)intro.textContent="Live requests from Buyer or Seller appear alongside fictional provider jobs so every service pathway can be explored immediately.";
+    setTextIfChanged(intro,"Live requests from Buyer or Seller appear alongside fictional provider jobs so every service pathway can be explored immediately.");
   }
 
   function hideDeprecatedAreas(){
-    document.querySelector(".workspace-stats")?.setAttribute("hidden","");
-    document.querySelector(".provider-summary-grid")?.setAttribute("hidden","");
+    const workspaceStats=document.querySelector(".workspace-stats"); if(workspaceStats&&!workspaceStats.hidden)workspaceStats.hidden=true;
+    const providerSummary=document.querySelector(".provider-summary-grid"); if(providerSummary&&!providerSummary.hidden)providerSummary.hidden=true;
     const action=$("client-action-center")?.closest("article"); if(action)action.hidden=true;
     const timeline=$("coordination-timeline")?.closest("article"); if(timeline)timeline.hidden=true;
     const providerTimeline=$("provider-timeline")?.closest("article"); if(providerTimeline)providerTimeline.hidden=true;
