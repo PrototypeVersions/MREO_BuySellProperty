@@ -264,7 +264,7 @@ test("selected provider follows a submitted request into the Service Partner vie
  const provider=page.locator('select[name="providerPreference"]');
  await expect(provider).toBeVisible();
  await expect(provider.locator("option")).toHaveCount(4);
- await provider.selectOption({label:/Redstone Restoration/});
+ await provider.selectOption({label:"Redstone Restoration · demonstration"});
  await page.locator("#service-submit").click();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await expect(page.locator("#provider-company-name")).toContainText("Redstone Restoration");
