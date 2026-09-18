@@ -19,7 +19,8 @@ test("closed auction hands the winning buyer into closing before sale completion
  await expect(page).toHaveURL(/coordination\.html\?/);
  await expect(page.locator("#coord-record-title")).toContainText("4218 Maple Ridge Drive");
  await expect(page.locator("#acquisition-heading")).toContainText("Seller acceptance and closing");
- await expect(page.getByRole("link",{name:"Start closing / title transfer →"})).toBeVisible();
+ await expect(page.getByRole("link",{name:"What comes next ↓"})).toBeVisible();
+ await expect(page.locator('[data-service="title"]')).toBeVisible();
  await expect(page.getByRole("button",{name:/Download acquisition package/i})).toHaveCount(0);
 });
 
