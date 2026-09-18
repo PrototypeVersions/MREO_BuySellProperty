@@ -137,13 +137,15 @@
   function setTextIfChanged(element,value){if(element&&element.textContent!==value)element.textContent=value;}
   function setAttention(card,data){
     if(!card)return;
-    card.classList.toggle("is-on",!!data.on);
-    card.classList.toggle("is-off",!data.on);
+    const stateLabel=data.stateLabel||(data.on?"Action needed":"Waiting");
+    const isComplete=stateLabel==="Complete";
+    card.classList.toggle("is-on",!!data.on&&!isComplete);
+    card.classList.toggle("is-off",!data.on&&!isComplete);
+    card.classList.toggle("is-complete",isComplete);
     const light=card.querySelector(".attention-light");
-    const lightLabel=data.on?"Action needed":"Waiting";
-    if(light&&light.getAttribute("aria-label")!==lightLabel)light.setAttribute("aria-label",lightLabel);
+    if(light&&light.getAttribute("aria-label")!==stateLabel)light.setAttribute("aria-label",stateLabel);
     const state=card.querySelector(".attention-state");
-    setTextIfChanged(state,lightLabel);
+    setTextIfChanged(state,stateLabel);
     const title=card.querySelector(".attention-title");
     setTextIfChanged(title,data.title);
     const copy=card.querySelector(".attention-copy");
@@ -225,6 +227,16 @@
   function serviceAttentionData(state,currentRole){
     const request=state?.requests?.[serviceKey]||null;
     const label=serviceLabels[serviceKey]?.title||"service";
+    if(request?.status==="complete"){
+      return {
+        on:false,
+        stateLabel:"Complete",
+        title:`${label} service complete.`,
+        copy:"This workflow is complete. No further action is required.",
+        href:"",
+        link:""
+      };
+    }
     if(currentRole==="provider"){
       if(!request)return {on:false,title:"Waiting for a client request.",copy:"No buyer or seller request has been submitted for this property and service.",href:"",link:""};
       return providerActionForRequest(serviceKey,request)||{on:false,title:"Waiting.",copy:"No provider action is required right now.",href:"",link:""};
