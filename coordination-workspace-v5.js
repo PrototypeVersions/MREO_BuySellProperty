@@ -1,0 +1,427 @@
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+  const serviceKey = params.get("service") || "";
+  const providers = globalThis.MREO_COORDINATION_PROVIDERS || {};
+  const demoJobs = globalThis.MREO_PROVIDER_DEMO_JOBS || [];
+  const serviceLabels = {
+    title:{title:"Title / Settlement",eyebrow:"01 · TITLE / SETTLEMENT",providerLabel:"Preferred title / settlement provider"},
+    contractors:{title:"Contractors",eyebrow:"02 · CONTRACTORS",providerLabel:"Preferred contractor"},
+    realtors:{title:"Realtors",eyebrow:"03 · REALTORS",providerLabel:"Preferred realtor / brokerage"},
+    rentals:{title:"Rent / Manage",eyebrow:"04 · RENT / MANAGE",providerLabel:"Preferred rental / management provider"}
+  };
+  const stateKey = (() => {
+    const label=params.get("address")||params.get("title")||"MREO property record";
+    const key=params.get("auction")||label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"unselected";
+    return `mreo:coordination:v3:${key}`;
+  })();
+  const demoJobStateKey="mreo:coordination:provider-demo:v1";
+  const queryProfile = {
+    name:params.get("accountName")||"",
+    email:params.get("accountEmail")||"",
+    phone:params.get("accountPhone")||"",
+    purchaseMethod:params.get("purchaseMethod")||"",
+    timeline:params.get("purchaseTimeline")||""
+  };
+  const contextLabel=params.get("address")||params.get("title")||"4218 Maple Ridge Drive, Dallas, TX 75229";
+  const contextPrice=params.get("price")||"";
+  let scheduled=false, applying=false;
+  const profilePromises={};
+
+  function role(){
+    const value=new URLSearchParams(location.search).get("role")||localStorage.getItem("mreo:coordination:role")||"buyer";
+    return ["buyer","seller","provider"].includes(value)?value:"buyer";
+  }
+  function loadState(){try{return JSON.parse(localStorage.getItem(stateKey)||"null");}catch{return null;}}
+  function saveState(state){if(state)localStorage.setItem(stateKey,JSON.stringify(state));}
+  function money(value){
+    const n=Number(value||0);
+    return Number.isFinite(n)&&n>0?new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n):"";
+  }
+  function esc(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+  function responseHref(key,nextRole){
+    const out=new URLSearchParams(location.search);
+    out.set("service",key);
+    out.set("role",nextRole||role());
+    return `coordination-response.html?${out.toString()}`;
+  }
+  function serviceHref(key,nextRole){
+    const out=new URLSearchParams(location.search);
+    out.set("service",key);
+    out.set("role",nextRole||role());
+    return `coordination-service.html?${out.toString()}`;
+  }
+  function cityStateFromLabel(){
+    const parts=contextLabel.split(",").map(s=>s.trim()).filter(Boolean);
+    if(parts.length>=3){
+      const state=parts[parts.length-1].replace(/\s+\d{5}(?:-\d{4})?$/,"");
+      return `${parts[parts.length-2]}, ${state}`;
+    }
+    return "";
+  }
+  function demoJobState(){
+    try{return JSON.parse(localStorage.getItem(demoJobStateKey)||"{}");}catch{return {};}
+  }
+  function currentDemoJob(job){
+    const saved=demoJobState()[job.id];
+    if(!saved)return job;
+    return {...job,actionNeeded:saved.actionNeeded,status:saved.status||job.status,summary:saved.summary||job.summary};
+  }
+
+  async function profileFor(currentRole){
+    if(currentRole==="provider")return null;
+    if(profilePromises[currentRole])return profilePromises[currentRole];
+    profilePromises[currentRole]=(async()=>{
+      let account=null;
+      try{if(globalThis.MreoService?.me)account=await globalThis.MreoService.me(currentRole);}catch{}
+      const details=account?.submission?.details||{};
+      const isBuyer=currentRole==="buyer";
+      const merged={
+        name:queryProfile.name||account?.name||(isBuyer?"Demo Buyer":"Demo Seller"),
+        email:queryProfile.email||account?.email||"",
+        phone:queryProfile.phone||details[isBuyer?"buyerPhone":"sellerPhone"]||"",
+        purchaseMethod:queryProfile.purchaseMethod||details.buyerPurchaseMethod||"",
+        timeline:queryProfile.timeline||details[isBuyer?"buyerTimeline":"saleTimeline"]||""
+      };
+      const state=loadState();
+      if(state?.acquisition&&merged.name){
+        const key=isBuyer?"buyer":"seller";
+        if(state.acquisition[key]!==merged.name){state.acquisition[key]=merged.name;saveState(state);}
+      }
+      return merged;
+    })();
+    return profilePromises[currentRole];
+  }
+
+  function renameVisibleServices(){
+    const contractor=document.querySelector('[data-service="contractors"]');
+    if(contractor){
+      const n=contractor.querySelector(".coordination-number"),h=contractor.querySelector("h2");
+      if(n&&n.textContent!=="02 · CONTRACTORS")n.textContent="02 · CONTRACTORS";
+      if(h&&h.textContent!=="Contractors")h.textContent="Contractors";
+    }
+    const realtor=document.querySelector('[data-service="realtors"]');
+    if(realtor){
+      const n=realtor.querySelector(".coordination-number"),h=realtor.querySelector("h2");
+      if(n&&n.textContent!=="03 · REALTORS")n.textContent="03 · REALTORS";
+      if(h&&h.textContent!=="Realtors")h.textContent="Realtors";
+    }
+    if(document.body.classList.contains("coordination-service-page")&&serviceKey&&serviceLabels[serviceKey]){
+      const info=serviceLabels[serviceKey];
+      if($("service-title")&&$("service-title").textContent!==info.title)$("service-title").textContent=info.title;
+      if($("service-eyebrow")&&$("service-eyebrow").textContent!==info.eyebrow)$("service-eyebrow").textContent=info.eyebrow;
+    }
+    const specialty=$("provider-specialty");
+    if(specialty){
+      [...specialty.options].forEach(option=>{
+        if(option.value==="contractors")option.textContent="Contractors";
+        if(option.value==="realtors")option.textContent="Realtors";
+      });
+    }
+  }
+
+  function ensureWhatComesNext(){
+    const button=$("acquisition-primary-action");
+    if(!button)return;
+    if(button.getAttribute("href")!=="#coordination-pathways")button.setAttribute("href","#coordination-pathways");
+    if(button.textContent!=="What comes next ↓")button.textContent="What comes next ↓";
+    const section=document.querySelector(".coordination-pathways-section");
+    if(section&&!section.id)section.id="coordination-pathways";
+  }
+
+  function setAttention(card,data){
+    if(!card)return;
+    card.classList.toggle("is-on",!!data.on);
+    card.classList.toggle("is-off",!data.on);
+    const light=card.querySelector(".attention-light");
+    if(light)light.setAttribute("aria-label",data.on?"Action needed":"Waiting");
+    const state=card.querySelector(".attention-state");
+    if(state)state.textContent=data.on?"Action needed":"Waiting";
+    const title=card.querySelector(".attention-title");
+    if(title)title.textContent=data.title;
+    const copy=card.querySelector(".attention-copy");
+    if(copy)copy.textContent=data.copy;
+    const link=card.querySelector(".attention-link");
+    if(link){
+      if(data.href){link.hidden=false;link.href=data.href;link.textContent=data.link||"Open →";}
+      else link.hidden=true;
+    }
+  }
+
+  function attentionForClient(state,currentRole){
+    const entries=Object.entries(state?.requests||{}).filter(([,request])=>request);
+    for(const [key,request] of entries){
+      const label=serviceLabels[key]?.title||key;
+      if(request.status==="proposal")return {on:true,title:`Review the ${label.toLowerCase()} provider response.`,copy:"A detailed provider response is ready. Review the terms, scope, requirements, and notes before approving or requesting changes.",href:responseHref(key,currentRole),link:"Review provider response →"};
+      if(request.status==="needs-info")return {on:true,title:`Provide information for ${label}.`,copy:"The service provider needs additional information before it can continue.",href:serviceHref(key,currentRole),link:"Open request →"};
+      if(key==="title"&&request.status==="in-progress"&&currentRole==="buyer"&&!request.clientClosingConfirmed)return {on:true,title:"Confirm the closing / signing step.",copy:"The settlement provider is waiting for the buyer to confirm that the required signing step is complete.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
+      if(request.status==="submitted")return {on:false,title:`Waiting for a ${label.toLowerCase()} provider.`,copy:"The request has been submitted. MREO is waiting for a participating provider to accept it.",href:serviceHref(key,currentRole),link:"View request →"};
+      if(request.status==="matched")return {on:false,title:`${label} is under provider review.`,copy:"The participating provider is reviewing the connected property record and request.",href:serviceHref(key,currentRole),link:"View request →"};
+      if(request.status==="approved"||request.status==="in-progress")return {on:false,title:`Waiting on the ${label.toLowerCase()} provider.`,copy:"The client-side step is complete. The participating provider is now responsible for the next workflow action.",href:serviceHref(key,currentRole),link:"View request →"};
+    }
+    if(state?.acquisition?.status!=="complete")return {on:true,title:"Choose the next closing step.",copy:"The winning transaction is recorded, but closing is still required. Title / Settlement is the recommended next pathway.",href:"#coordination-pathways",link:"See service paths ↓"};
+    return {on:true,title:"Choose what this property needs next.",copy:"There is no active request waiting on someone else. Select one of the four coordination pathways below.",href:"#coordination-pathways",link:"See service paths ↓"};
+  }
+
+  function providerActionForRequest(key,request){
+    const label=serviceLabels[key]?.title||key;
+    if(request.status==="submitted")return {on:true,title:`Review incoming ${label.toLowerCase()} request.`,copy:"Check the client answers and connected property information, then accept the request or ask for more information.",href:serviceHref(key,"provider"),link:"Open request →"};
+    if(request.status==="matched")return {on:true,title:`Prepare the ${label.toLowerCase()} provider response.`,copy:"The request has been accepted. Prepare the detailed response the client will review.",href:responseHref(key,"provider"),link:"Prepare response →"};
+    if(request.status==="approved")return {on:true,title:`Start the approved ${label.toLowerCase()} service.`,copy:"The client approved the provider response. Scheduling or work can now begin.",href:serviceHref(key,"provider"),link:"Open request →"};
+    if(request.status==="in-progress"){
+      if(key==="title"&&!request.clientClosingConfirmed)return {on:false,title:"Waiting for buyer closing confirmation.",copy:"The title file is in progress, but the provider is waiting for the buyer to complete the signing confirmation.",href:serviceHref(key,"provider"),link:"View request →"};
+      return {on:true,title:`Update the ${label.toLowerCase()} job.`,copy:"Work is in progress. Review the file and complete or update the next provider step.",href:serviceHref(key,"provider"),link:"Open request →"};
+    }
+    if(request.status==="needs-info")return {on:false,title:"Waiting for client information.",copy:"The provider requested information and is waiting for the buyer or seller to respond.",href:serviceHref(key,"provider"),link:"View request →"};
+    if(request.status==="proposal")return {on:false,title:"Waiting for client review.",copy:"The provider response has been sent. The client must approve it or request changes.",href:responseHref(key,"provider"),link:"View sent response →"};
+    return null;
+  }
+
+  function attentionForProvider(state){
+    for(const [key,request] of Object.entries(state?.requests||{})){
+      if(!request)continue;
+      const item=providerActionForRequest(key,request);
+      if(item?.on)return item;
+    }
+    const demo=demoJobs.map(currentDemoJob).find(job=>job.actionNeeded);
+    if(demo)return {on:true,title:demo.status+".",copy:`${demo.property} · ${demo.summary}`,href:`coordination-provider-job.html?job=${encodeURIComponent(demo.id)}`,link:"Open provider job →"};
+    for(const [key,request] of Object.entries(state?.requests||{})){
+      if(!request)continue;
+      const item=providerActionForRequest(key,request);
+      if(item)return item;
+    }
+    return {on:false,title:"Waiting for new provider work.",copy:"There is nothing in the provider queue that currently requires action.",href:"#provider-queue-title",link:"View work queue ↓"};
+  }
+
+  function ensureHubAttention(){
+    if(!document.body.classList.contains("coordination-page"))return;
+    let card=$("coord-attention-v5");
+    if(!card){
+      card=document.createElement("div");
+      card.id="coord-attention-v5";
+      card.className="attention-card";
+      card.innerHTML='<span class="attention-light" aria-hidden="true"></span><div class="attention-body"><span class="attention-state"></span><strong class="attention-title"></strong><p class="attention-copy"></p></div><a class="attention-link" href="#"></a>';
+      const intro=document.querySelector(".role-intro");
+      intro?.appendChild(card);
+    }
+    const currentRole=role(),state=loadState();
+    setAttention(card,currentRole==="provider"?attentionForProvider(state):attentionForClient(state,currentRole));
+    document.querySelector(".workspace-stats")?.setAttribute("hidden","");
+    document.querySelector(".provider-summary-grid")?.setAttribute("hidden","");
+    const actionCenter=$("client-action-center")?.closest("article"); if(actionCenter)actionCenter.hidden=true;
+    const timeline=$("coordination-timeline")?.closest("article"); if(timeline)timeline.hidden=true;
+    const providerTimeline=$("provider-timeline")?.closest("article"); if(providerTimeline)providerTimeline.hidden=true;
+    const providerDocs=$("provider-document-library")?.closest(".lower-workspace-grid");
+    if(providerDocs)providerDocs.classList.add("v5-single-column");
+  }
+
+  function serviceAttentionData(state,currentRole){
+    const request=state?.requests?.[serviceKey]||null;
+    const label=serviceLabels[serviceKey]?.title||"service";
+    if(currentRole==="provider"){
+      if(!request)return {on:false,title:"Waiting for a client request.",copy:"No buyer or seller request has been submitted for this property and service.",href:"",link:""};
+      return providerActionForRequest(serviceKey,request)||{on:false,title:"Waiting.",copy:"No provider action is required right now.",href:"",link:""};
+    }
+    if(!request)return {on:true,title:`Complete the ${label} request.`,copy:"Review the information carried forward from the property record, add anything still needed, and submit it to a provider.",href:"#request-title",link:"Go to request form ↓"};
+    return attentionForClient({requests:{[serviceKey]:request},acquisition:{status:"complete"}},currentRole);
+  }
+
+  function ensureServiceAttention(){
+    if(!document.body.classList.contains("coordination-service-page")||!serviceKey)return;
+    let card=$("service-attention-v5");
+    if(!card){
+      card=document.createElement("section");
+      card.id="service-attention-v5";
+      card.className="attention-card service-attention-card";
+      card.innerHTML='<span class="attention-light" aria-hidden="true"></span><div class="attention-body"><span class="attention-state"></span><strong class="attention-title"></strong><p class="attention-copy"></p></div><a class="attention-link" href="#"></a>';
+      const strip=document.querySelector(".service-demo-strip");
+      strip?.insertAdjacentElement("afterend",card);
+    }
+    setAttention(card,serviceAttentionData(loadState(),role()));
+    const timeline=$("service-timeline")?.closest("article"); if(timeline)timeline.hidden=true;
+    const lower=document.querySelector(".service-lower-grid"); if(lower)lower.classList.add("v5-single-column");
+  }
+
+  function providerOptionsFor(key){
+    return providers[key]||["Match me with a participating provider"];
+  }
+
+  function ensureProviderDropdown(){
+    if(!document.body.classList.contains("coordination-service-page")||!serviceKey||role()==="provider")return;
+    const state=loadState();
+    if(state?.requests?.[serviceKey])return;
+    const container=$("service-form-fields");
+    if(!container)return;
+    let select=container.querySelector('select[name="providerPreference"]');
+    if(!select){
+      const firstSection=container.querySelector(".service-form-section");
+      if(!firstSection)return;
+      const label=document.createElement("label");
+      label.className="provider-choice-field";
+      label.innerHTML=`${esc(serviceLabels[serviceKey]?.providerLabel||"Preferred provider")}<select name="providerPreference"></select><span class="field-source">Choose a fictional provider or let MREO match the request.</span>`;
+      const h=firstSection.querySelector("h3");
+      h?.insertAdjacentElement("afterend",label);
+      select=label.querySelector("select");
+    }else{
+      const label=select.closest("label");
+      if(label&&serviceLabels[serviceKey]?.providerLabel){
+        const textNode=[...label.childNodes].find(node=>node.nodeType===Node.TEXT_NODE);
+        if(textNode)textNode.textContent=serviceLabels[serviceKey].providerLabel;
+      }
+    }
+    const options=providerOptionsFor(serviceKey);
+    const current=select.value;
+    const desired=options.map(value=>`<option value="${esc(value)}">${esc(value)}</option>`).join("");
+    if(select.innerHTML!==desired){
+      select.innerHTML=desired;
+      if(options.includes(current))select.value=current;
+    }
+  }
+
+  function prefillKnownInformation(){
+    if(!document.body.classList.contains("coordination-service-page")||!serviceKey||role()==="provider")return;
+    const state=loadState();
+    if(state?.requests?.[serviceKey])return;
+    const container=$("service-form-fields");
+    if(!container||container.dataset.v5PrefillPending==="1")return;
+    container.dataset.v5PrefillPending="1";
+    profileFor(role()).then(profile=>{
+      container.dataset.v5PrefillPending="";
+      if(!document.body.contains(container)||loadState()?.requests?.[serviceKey])return;
+      let panel=container.querySelector(".carried-forward-panel");
+      if(!panel){
+        panel=document.createElement("section");
+        panel.className="carried-forward-panel";
+        container.prepend(panel);
+      }
+      const amount=money(contextPrice);
+      const method=profile?.purchaseMethod||"";
+      panel.innerHTML=`
+        <div class="carried-forward-heading"><span>Carried forward from Buy / Auction</span><strong>Known information</strong><p>MREO reuses information already in the property and transaction record. Update contact fields if something has changed.</p></div>
+        <div class="carried-forward-grid">
+          <label>Client / account name<input name="clientAccountName" type="text" value="${esc(profile?.name||"")}"></label>
+          <label>Email<input name="clientEmail" type="email" value="${esc(profile?.email||"")}"></label>
+          <label>Phone<input name="clientPhone" type="tel" value="${esc(profile?.phone||"")}"></label>
+          <label>Property<input type="text" value="${esc(contextLabel)}" readonly><span class="field-source">From property record</span></label>
+          <label>Winning / purchase amount<input type="text" value="${esc(amount||"Not recorded")}" readonly><span class="field-source">From auction / acquisition record</span></label>
+          <label>Purchase method<input name="purchaseMethodSource" type="text" value="${esc(method)}" placeholder="Not previously supplied"><span class="field-source">From Buy section when available</span></label>
+        </div>`;
+      const legal=container.querySelector('input[name="legalName"],input[name="sellerLegalName"]');
+      if(legal&&profile?.name&&(legal.value==="Demo Buyer"||legal.value==="Demo Seller"||!legal.value))legal.value=profile.name;
+      const funding=container.querySelector('select[name="funding"]');
+      if(funding&&method){
+        const lower=method.toLowerCase();
+        funding.value=lower.includes("cash")?"Cash purchase":lower.includes("financ")?"Financing":"Other / to be confirmed";
+      }
+      const market=container.querySelector('input[name="market"]');
+      const parsedMarket=cityStateFromLabel();
+      if(market&&parsedMarket&&(market.value==="Dallas, Texas"||!market.value))market.value=parsedMarket;
+      ensureProviderDropdown();
+    });
+  }
+
+  function wireProviderSelection(){
+    const form=$("service-request-form");
+    if(!form||form.dataset.v5ProviderWired==="1")return;
+    form.dataset.v5ProviderWired="1";
+    form.addEventListener("submit",()=>{
+      const selected=form.querySelector('select[name="providerPreference"]')?.value||"";
+      const clientName=form.querySelector('input[name="clientAccountName"]')?.value||"";
+      const clientEmail=form.querySelector('input[name="clientEmail"]')?.value||"";
+      const clientPhone=form.querySelector('input[name="clientPhone"]')?.value||"";
+      setTimeout(()=>{
+        const state=loadState(),request=state?.requests?.[serviceKey];
+        if(!request)return;
+        request.data=request.data||{};
+        request.data.providerPreference=selected;
+        request.data.clientAccountName=clientName||request.data.clientAccountName||"";
+        request.data.clientEmail=clientEmail||request.data.clientEmail||"";
+        request.data.clientPhone=clientPhone||request.data.clientPhone||"";
+        request.provider=selected&&selected!=="Match me with a participating provider"?selected:"";
+        saveState(state);
+        schedule();
+      },0);
+    },true);
+  }
+
+  function actualProviderRows(state,specialty){
+    return Object.entries(state?.requests||{}).filter(([key,request])=>request&&(specialty==="all"||specialty===key)).map(([key,request])=>{
+      const label=serviceLabels[key]?.title||key;
+      const action=providerActionForRequest(key,request)||{on:false,title:"Complete",copy:"This request is complete."};
+      return {
+        id:`actual-${key}`,service:key,property:contextLabel,client:request.data?.clientAccountName||(request.ownerRole==="seller"?"Demo Seller":"Demo Buyer"),
+        provider:request.provider||"Awaiting provider match",actionNeeded:!!action.on,status:action.title,summary:action.copy,
+        meta:[request.data?.providerPreference||"Provider preference not specified",request.attachments?.length?`${request.attachments.length} supporting file(s)`:"Connected records only",request.status.replace(/-/g," ")],
+        href:serviceHref(key,"provider"),actual:true,label
+      };
+    });
+  }
+
+  function renderProviderQueue(){
+    if(!document.body.classList.contains("coordination-page")||role()!=="provider")return;
+    const queue=$("provider-queue"),specialty=$("provider-specialty")?.value||"all";
+    if(!queue)return;
+    const state=loadState();
+    const actual=actualProviderRows(state,specialty);
+    const examples=demoJobs.map(currentDemoJob).filter(job=>specialty==="all"||specialty===job.service).map(job=>({
+      ...job,label:serviceLabels[job.service]?.title||job.service,href:`coordination-provider-job.html?job=${encodeURIComponent(job.id)}`
+    }));
+    const rows=[...actual,...examples];
+    const key=JSON.stringify(rows.map(row=>[row.id,row.actionNeeded,row.status,row.provider,row.meta]));
+    if(queue.dataset.v5Key===key&&queue.querySelector("[data-v5-provider-row]"))return;
+    queue.dataset.v5Key=key;
+    queue.innerHTML=rows.map(row=>`
+      <article class="provider-job provider-job-v5" data-v5-provider-row>
+        <div class="provider-job-signal"><span class="mini-attention-light ${row.actionNeeded?"is-on":"is-off"}"></span><strong>${row.actionNeeded?"Action needed":"Waiting"}</strong></div>
+        <div class="provider-job-main">
+          <div class="provider-job-topline"><span class="coordination-number">${esc(serviceLabels[row.service]?.eyebrow||row.label)}</span><span>${esc(row.provider)}</span></div>
+          <h3>${esc(row.property)}</h3>
+          <p><strong>${esc(row.status)}</strong> · ${esc(row.summary)}</p>
+          <div class="provider-job-meta">${(row.meta||[]).map(item=>`<span>${esc(item)}</span>`).join("")}</div>
+        </div>
+        <div class="provider-job-action"><a class="primary-button button-blue" href="${row.href}">${row.actual?"Open request →":"Open provider job →"}</a></div>
+      </article>`).join("");
+    const heading=$("provider-queue-title");
+    if(heading)heading.textContent="Provider work queue";
+    const intro=$("provider-inbox-heading")?.nextElementSibling;
+    if(intro)intro.textContent="Live requests from Buyer or Seller appear alongside fictional provider jobs so every service pathway can be explored immediately.";
+  }
+
+  function hideDeprecatedAreas(){
+    document.querySelector(".workspace-stats")?.setAttribute("hidden","");
+    document.querySelector(".provider-summary-grid")?.setAttribute("hidden","");
+    const action=$("client-action-center")?.closest("article"); if(action)action.hidden=true;
+    const timeline=$("coordination-timeline")?.closest("article"); if(timeline)timeline.hidden=true;
+    const providerTimeline=$("provider-timeline")?.closest("article"); if(providerTimeline)providerTimeline.hidden=true;
+    const serviceTimeline=$("service-timeline")?.closest("article"); if(serviceTimeline)serviceTimeline.hidden=true;
+  }
+
+  function apply(){
+    if(applying)return;
+    applying=true;
+    try{
+      renameVisibleServices();
+      ensureWhatComesNext();
+      hideDeprecatedAreas();
+      ensureHubAttention();
+      ensureServiceAttention();
+      ensureProviderDropdown();
+      prefillKnownInformation();
+      wireProviderSelection();
+      renderProviderQueue();
+    }finally{applying=false;}
+  }
+  function schedule(){
+    if(scheduled)return;
+    scheduled=true;
+    requestAnimationFrame(()=>{scheduled=false;apply();});
+  }
+
+  schedule();
+  new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["hidden","aria-pressed"]});
+  document.addEventListener("change",event=>{if(event.target?.id==="provider-specialty")setTimeout(schedule,0);});
+  document.addEventListener("click",event=>{if(event.target.closest("[data-role]"))setTimeout(schedule,0);});
+  setInterval(schedule,3500);
+})();
