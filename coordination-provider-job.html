@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Demonstration MREO provider work item.">
+  <title>Provider Work Item | MREO</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
+  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v4">
+  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260918-workspace-v5">
+</head>
+<body class="provider-job-page">
+  <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html?role=provider" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
+  <div class="protocol-strip" data-mode-label></div>
+
+  <main class="page-shell coordination-shell">
+    <a class="back-link" href="coordination.html?role=provider#provider-queue-title"><span aria-hidden="true">←</span> Provider work queue</a>
+
+    <section class="coordination-hero provider-job-hero">
+      <div>
+        <p class="section-label" id="provider-job-service">Service Partner</p>
+        <h1 id="provider-job-property">Provider work item</h1>
+        <p id="provider-job-summary">Open a fictional request to explore the provider side of MREO coordination.</p>
+      </div>
+      <aside class="record-card record-card-large">
+        <p class="record-eyebrow">Assigned company</p>
+        <h2 id="provider-job-company">Participating provider</h2>
+        <p id="provider-job-client">Client</p>
+        <span class="record-status" id="provider-job-status">Provider work item</span>
+      </aside>
+    </section>
+
+    <section class="attention-card" id="provider-job-attention">
+      <span class="attention-light" aria-hidden="true"></span>
+      <div class="attention-body"><span class="attention-state"></span><strong class="attention-title"></strong><p class="attention-copy"></p></div>
+      <a class="attention-link" href="#provider-job-request">Review request ↓</a>
+    </section>
+
+    <div class="provider-job-detail-grid" id="provider-job-request">
+      <section class="provider-job-panel">
+        <p class="section-label">Incoming request</p>
+        <h2>Request details</h2>
+        <p>The property and transaction information is already connected. This page shows the provider-specific information needed for the next action.</p>
+        <div class="provider-job-fields" id="provider-job-fields"></div>
+      </section>
+
+      <section class="provider-job-panel">
+        <p class="section-label">Provider task</p>
+        <h2>What happens next</h2>
+        <div class="provider-task-box"><strong id="provider-job-task-title">Review request</strong><p id="provider-job-task"></p></div>
+        <div class="provider-job-actions" id="provider-job-actions"></div>
+      </section>
+    </div>
+
+    <aside class="coordination-note"><strong>Fictional provider work item.</strong><p>This request is demonstration data designed to show how a participating company could receive work, review connected information, and complete its next step inside MREO.</p></aside>
+  </main>
+
+  <footer class="site-footer"><p>MREO connects property requests to participating service providers.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
+  <script src="app.js"></script>
+  <script src="coordination-v5-data.js?v=20260918-workspace-v5"></script>
+  <script src="coordination-provider-job.js?v=20260918-workspace-v5"></script>
+</body>
+</html>
