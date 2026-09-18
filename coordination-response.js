@@ -45,7 +45,7 @@
       ]
     },
     contractors: {
-      eyebrow:"02 · Improve", shortTitle:"Construction / Improvement", title:"Renovation scope & proposal", provider:"Cedar Build & Rehab · demonstration", summary:"Detailed renovation scope, line-item budget, schedule, assumptions, and exclusions.", amount:28400,
+      eyebrow:"02 · Contractors", shortTitle:"Contractors", title:"Renovation scope & proposal", provider:"Cedar Build & Rehab · demonstration", summary:"Detailed renovation scope, line-item budget, schedule, assumptions, and exclusions.", amount:28400,
       groups:[
         {title:"Price & schedule",description:"The contractor's proposed commercial terms for the fictional project.",fields:[
           {key:"totalPrice",label:"Total project price",type:"text",default:"$28,400"},
@@ -62,7 +62,7 @@
       ]
     },
     realtors: {
-      eyebrow:"03 · Represent", shortTitle:"Brokerage / Representation", title:"Representation & market positioning package", provider:"MetroLine Realty Group · demonstration", summary:"Proposed representation services, market positioning, fees, marketing plan, and next actions.", amount:0,
+      eyebrow:"03 · Realtors", shortTitle:"Realtors", title:"Representation & market positioning package", provider:"MetroLine Realty Group · demonstration", summary:"Proposed representation services, market positioning, fees, marketing plan, and next actions.", amount:0,
       groups:[
         {title:"Market positioning & terms",fields:[
           {key:"marketPosition",label:"Recommended market positioning",type:"text",default:"Post-improvement rental positioning at $2,850–$3,050 per month"},
