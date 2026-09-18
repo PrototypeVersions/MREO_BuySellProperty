@@ -545,8 +545,8 @@ Property: ${context.label}
       ];
       const primaryAction = $("acquisition-primary-action");
       if (primaryAction) {
-        primaryAction.href = `coordination-service.html?${query({service:"title", role})}`;
-        primaryAction.textContent = pending ? (role === "seller" ? "Open seller closing workflow →" : "Start closing / title transfer →") : "Open title / transfer workflow →";
+        primaryAction.href = "#coordination-pathways";
+        primaryAction.textContent = "What comes next ↓";
       }
       $("acquisition-details").innerHTML = details.map(([label,value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join("");
       $("coord-stat-open").textContent = String(openRequests().length);
