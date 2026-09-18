@@ -179,7 +179,7 @@
     if (context.image) out.set("image", context.image);
     if (context.count) out.set("count", context.count);
     if (context.stage) out.set("stage", context.stage);
-    ["accountName","accountEmail","accountPhone","purchaseMethod","purchaseTimeline"].forEach((key) => { const value = params.get(key); if (value) out.set(key, value); });
+    ["accountName","accountEmail","accountPhone","purchaseMethod","purchaseTimeline","accountRole"].forEach((key) => { const value = params.get(key); if (value) out.set(key, value); });
     Object.entries(extra).forEach(([key, value]) => value !== undefined && value !== null && value !== "" && out.set(key, value));
     return out.toString();
   }
