@@ -117,7 +117,7 @@ test("all four coordination pathways can be submitted and appear in the provider
   await expect(page.locator(`[data-service="${service}"] .service-status`)).not.toHaveText("Not started");
  }
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
- await expect(page.locator("#provider-queue .provider-job")).toHaveCount(4);
+ await expect(page.locator('#provider-queue .provider-job[data-provider-source="live"]')).toHaveCount(4);
  await expect(page.locator("#provider-inbox-count")).toHaveText("4");
 });
 
