@@ -217,3 +217,71 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
  const interest=page.getByRole("link",{name:"Prepare Interest"});
  expect(new URL(await interest.getAttribute("href"),page.url()).searchParams.get("auction")).toBe(created.auctionId);
 });
+
+
+test("streamlined coordination hub uses one attention indicator and clearer service names",async({page})=>{
+ const base="/coordination.html?type=property&auction=coord-v5-hub&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
+ await page.goto(base);
+ await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-hub");localStorage.removeItem("mreo:coordination:provider-demo:v1");});
+ await page.reload();
+ await expect(page.locator('[data-service="contractors"] h2')).toHaveText("Contractors");
+ await expect(page.locator('[data-service="realtors"] h2')).toHaveText("Realtors");
+ await expect(page.locator("#acquisition-primary-action")).toHaveText("What comes next ↓");
+ await expect(page.locator("#acquisition-primary-action")).toHaveAttribute("href","#coordination-pathways");
+ await expect(page.locator("#coord-attention-v5")).toBeVisible();
+ await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
+ await expect(page.locator(".workspace-stats")).toBeHidden();
+ await expect(page.locator("#coordination-timeline").locator("xpath=ancestor::article[1]")).toBeHidden();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator(".provider-summary-grid")).toBeHidden();
+ await expect(page.locator("#provider-queue [data-v5-provider-row]")).toHaveCount(8);
+ await expect(page.locator("#provider-queue")).toContainText("Review closing profile");
+ await expect(page.locator("#provider-queue")).toContainText("Prepare rehabilitation estimate");
+});
+
+test("coordination reuses buyer information and offers service-specific provider choices",async({page})=>{
+ const url="/coordination-service.html?type=property&auction=coord-v5-prefill&address=2605%20Preston%20Meadow%20Court%2C%20Plano%2C%20TX%2075093&price=2000000&service=title&role=buyer&accountName=Acquisition%20Buyer%20LLC&accountEmail=buyer%40example.com&accountPhone=214-555-0199&purchaseMethod=Cash";
+ await page.goto(url);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-v5-prefill"));
+ await page.reload();
+ await expect(page.locator(".carried-forward-panel")).toBeVisible();
+ await expect(page.locator('input[name="clientAccountName"]')).toHaveValue("Acquisition Buyer LLC");
+ await expect(page.locator('input[name="clientEmail"]')).toHaveValue("buyer@example.com");
+ await expect(page.locator('input[name="legalName"]')).toHaveValue("Acquisition Buyer LLC");
+ await expect(page.locator('select[name="funding"]')).toHaveValue("Cash purchase");
+ const provider=page.locator('select[name="providerPreference"]');
+ await expect(provider.locator("option")).toHaveCount(4);
+ await expect(provider).toContainText("Match me with a participating provider");
+ await expect(provider).toContainText("Meridian Closing Services");
+ await expect(provider).toContainText("Lone Oak Title");
+});
+
+test("selected provider follows a submitted request into the Service Partner view",async({page})=>{
+ const url="/coordination-service.html?type=property&auction=coord-v5-provider&address=940%20Hickory%20Grove%20Road%2C%20Denton%2C%20TX%2076209&price=354000&service=contractors&role=buyer&accountName=Hickory%20Grove%20Properties";
+ await page.goto(url);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-v5-provider"));
+ await page.reload();
+ const provider=page.locator('select[name="providerPreference"]');
+ await expect(provider).toBeVisible();
+ await expect(provider.locator("option")).toHaveCount(4);
+ await provider.selectOption({label:/Redstone Restoration/});
+ await page.locator("#service-submit").click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-company-name")).toContainText("Redstone Restoration");
+});
+
+test("fictional provider queue jobs open into interactive provider detail pages",async({page})=>{
+ await page.goto("/coordination.html?role=provider&auction=coord-v5-demo-jobs&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229");
+ await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-demo-jobs");localStorage.removeItem("mreo:coordination:provider-demo:v1");});
+ await page.reload();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ const row=page.locator("#provider-queue [data-v5-provider-row]").filter({hasText:"940 Hickory Grove Road"});
+ await expect(row).toContainText("Action needed");
+ await row.getByRole("link",{name:"Open provider job →"}).click();
+ await expect(page).toHaveURL(/coordination-provider-job\.html\?job=contractor-hickory/);
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#provider-job-fields")).toContainText("$42,000");
+ await page.getByRole("button",{name:"Mark estimate prepared"}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
+ await expect(page.locator("#provider-job-status")).toContainText("Waiting for owner review");
+});
