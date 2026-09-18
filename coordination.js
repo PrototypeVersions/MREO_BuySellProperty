@@ -77,11 +77,11 @@
       completionTitle: "Recorded transfer & final closing record"
     },
     contractors: {
-      eyebrow: "02 · Improve",
-      title: "Improve",
-      shortTitle: "Construction / Improvement",
+      eyebrow: "02 · Contractors",
+      title: "Contractors",
+      shortTitle: "Contractors",
       provider: "Cedar Build & Rehab · demonstration",
-      specialty: "Construction / improvement",
+      specialty: "Contractors",
       clientIntro: "Create a structured work package with scope, budget, access information, and supporting files. A participating contractor can review the same packet, request information, send a proposal, and track the approved work through completion.",
       steps: ["Create the property work package and upload supporting material", "Contractor reviews scope, condition, access, and timing", "Contractor returns a written scope, price, and schedule", "Client approves the proposal and scheduling", "Work progresses through completion and closeout"],
       action: "Submit improvement request",
@@ -101,11 +101,11 @@
       completionTitle: "Construction completion & closeout package"
     },
     realtors: {
-      eyebrow: "03 · Represent",
-      title: "Represent",
-      shortTitle: "Brokerage / Representation",
+      eyebrow: "03 · Realtors",
+      title: "Realtors",
+      shortTitle: "Realtors",
       provider: "MetroLine Realty Group · demonstration",
-      specialty: "Brokerage / representation",
+      specialty: "Realtors",
       clientIntro: "Share the property packet with a participating brokerage and coordinate the representation, valuation, marketing, showing, leasing, or transaction assistance needed for the next property objective.",
       steps: ["Select the representation objective and market", "Brokerage reviews the property packet and client goals", "Brokerage returns proposed services and market positioning", "Client approves the representation package", "Representation activity and resulting documents are tracked"],
       action: "Submit representation request",
@@ -179,6 +179,7 @@
     if (context.image) out.set("image", context.image);
     if (context.count) out.set("count", context.count);
     if (context.stage) out.set("stage", context.stage);
+    ["accountName","accountEmail","accountPhone","purchaseMethod","purchaseTimeline"].forEach((key) => { const value = params.get(key); if (value) out.set(key, value); });
     Object.entries(extra).forEach(([key, value]) => value !== undefined && value !== null && value !== "" && out.set(key, value));
     return out.toString();
   }
