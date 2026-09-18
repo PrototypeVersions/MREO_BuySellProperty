@@ -377,7 +377,7 @@
     if(queue.dataset.v5Key===key&&queue.querySelector("[data-v5-provider-row]"))return;
     queue.dataset.v5Key=key;
     queue.innerHTML=rows.map(row=>`
-      <article class="provider-job provider-job-v5" data-v5-provider-row>
+      <article class="provider-job provider-job-v5" data-v5-provider-row data-provider-source="${row.actual?"live":"demo"}">
         <div class="provider-job-signal"><strong>${row.actionNeeded?"Action needed":"Waiting"}</strong></div>
         <div class="provider-job-main">
           <div class="provider-job-topline"><span class="coordination-number">${esc(serviceLabels[row.service]?.eyebrow||row.label)}</span><span>${esc(row.provider)}</span></div>
