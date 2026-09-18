@@ -7,7 +7,7 @@
   <title>Property Coordination Workspace | MREO</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
-  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v4">
+  <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v4">\n  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260918-workspace-v5">
 </head>
 <body class="coordination-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -76,7 +76,7 @@
           <h2 id="acquisition-heading">4218 Maple Ridge is now in your MREO workspace.</h2>
           <p id="acquisition-copy">The property record carries the transaction information into the next workflow automatically.</p>
           <dl class="workspace-details" id="acquisition-details"></dl>
-          <div class="form-actions"><a class="primary-button button-blue" id="acquisition-primary-action" href="coordination-service.html?service=title">Start closing / title transfer →</a></div>
+          <div class="form-actions"><a class="primary-button button-blue" id="acquisition-primary-action" href="#coordination-pathways">What comes next ↓</a></div>
         </article>
 
         <article class="workspace-panel" aria-labelledby="workspace-documents-heading">
@@ -87,7 +87,7 @@
         </article>
       </section>
 
-      <section aria-labelledby="coordination-services-heading" class="coordination-pathways-section">
+      <section id="coordination-pathways" aria-labelledby="coordination-services-heading" class="coordination-pathways-section">
         <p class="section-label">Four coordination pathways</p>
         <div class="section-heading-row">
           <div>
@@ -97,8 +97,8 @@
         </div>
         <div class="coordination-grid" id="coordination-grid">
           <a class="coordination-card" data-service="title" href="coordination-service.html?service=title"><span class="coordination-number">01 · TRANSFER</span><h2>Title Transfer</h2><p data-role-description>Coordinate settlement, title review, required documents, exceptions, signatures, and closing.</p><span class="service-status">Not started</span><span class="card-action">Open title workflow →</span></a>
-          <a class="coordination-card" data-service="contractors" href="coordination-service.html?service=contractors"><span class="coordination-number">02 · IMPROVE</span><h2>Improve</h2><p data-role-description>Create a work package, upload property material, receive a scope and proposal, approve the work, and follow completion.</p><span class="service-status">Not started</span><span class="card-action">Open improvement workflow →</span></a>
-          <a class="coordination-card" data-service="realtors" href="coordination-service.html?service=realtors"><span class="coordination-number">03 · REPRESENT</span><h2>Represent</h2><p data-role-description>Send the property packet to a participating brokerage and coordinate representation, pricing, listing, or leasing support.</p><span class="service-status">Not started</span><span class="card-action">Open representation workflow →</span></a>
+          <a class="coordination-card" data-service="contractors" href="coordination-service.html?service=contractors"><span class="coordination-number">02 · CONTRACTORS</span><h2>Contractors</h2><p data-role-description>Create a work package, upload property material, receive a scope and proposal, approve the work, and follow completion.</p><span class="service-status">Not started</span><span class="card-action">Open improvement workflow →</span></a>
+          <a class="coordination-card" data-service="realtors" href="coordination-service.html?service=realtors"><span class="coordination-number">03 · REALTORS</span><h2>Realtors</h2><p data-role-description>Send the property packet to a participating brokerage and coordinate representation, pricing, listing, or leasing support.</p><span class="service-status">Not started</span><span class="card-action">Open representation workflow →</span></a>
           <a class="coordination-card" data-service="rentals" href="coordination-service.html?service=rentals"><span class="coordination-number">04 · RENT / MANAGE</span><h2>Rent / Manage</h2><p data-role-description>Move from rental readiness through tenant placement, lease execution, move-in, maintenance, and ongoing management.</p><span class="service-status">Not started</span><span class="card-action">Open rental workflow →</span></a>
         </div>
       </section>
@@ -165,6 +165,6 @@
   </main>
 
   <footer class="site-footer"><p>MREO connects the transaction to the work required to transfer, improve, represent, rent, and manage the property.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
-  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260917-seller-media-picker"></script><script src="coordination.js?v=20260917-workspace-v4"></script><script src="coordination-response-enhancements.js?v=20260917-provider-response-v1"></script>
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260914-blind-auction"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260917-seller-media-picker"></script><script src="coordination-v5-data.js?v=20260918-workspace-v5"></script><script src="coordination.js?v=20260917-workspace-v4"></script><script src="coordination-response-enhancements.js?v=20260917-provider-response-v1"></script><script src="coordination-workspace-v5.js?v=20260918-workspace-v5"></script>
 </body>
 </html>
