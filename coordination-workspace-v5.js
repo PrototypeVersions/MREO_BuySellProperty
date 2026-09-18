@@ -13,8 +13,9 @@
     rentals:{title:"Rent / Manage",eyebrow:"04 · RENT / MANAGE",providerLabel:"Preferred rental / management provider"}
   };
   const stateKey = (() => {
-    const label=params.get("address")||params.get("title")||"MREO property record";
-    const key=params.get("auction")||label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"unselected";
+    const hasIncomingContext=["auction","address","title","price","image","count"].some(key=>params.get(key));
+    const label=params.get("address")||params.get("title")||(hasIncomingContext?"MREO property record":"4218 Maple Ridge Drive, Dallas, TX 75229");
+    const key=params.get("auction")||(!hasIncomingContext?"demo-property":label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""))||"unselected";
     return `mreo:coordination:v3:${key}`;
   })();
   const demoJobStateKey="mreo:coordination:provider-demo:v1";
