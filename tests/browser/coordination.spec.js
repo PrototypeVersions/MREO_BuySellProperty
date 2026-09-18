@@ -128,7 +128,7 @@ test("coordination keeps property records connected without unnecessary download
  await expect(page.locator("#coord-document-library .document-item")).toHaveCount(3);
  await expect(page.locator("#coord-document-library")).toContainText("Connected");
  await expect(page.getByRole("button",{name:/Download acquisition package/i})).toHaveCount(0);
- await expect(page.getByRole("link",{name:/title \/ transfer workflow/i})).toBeVisible();
+ await expect(page.getByRole("link",{name:"What comes next ↓"})).toBeVisible();
  await page.getByRole("button",{name:"Seller",exact:true}).click();
  await expect(page.locator("#role-workspace-title")).toContainText("Closing, transfer");
  await expect(page.locator("#acquisition-details")).toContainText("Winning buyer");
@@ -140,7 +140,7 @@ test("title workflow requires buyer closing participation",async({page})=>{
  await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-title-buyer"));
  await page.reload();
  await expect(page.locator("#acquisition-heading")).toContainText("Seller acceptance and closing");
- await page.getByRole("link",{name:"Start closing / title transfer →"}).click();
+ await expect(page.getByRole("link",{name:"What comes next ↓"})).toBeVisible();\n await page.locator('[data-service="title"]').click();
  await expect(page.locator('input[name="legalName"]')).toBeVisible();
  await expect(page.locator('select[name="funding"]')).toBeVisible();
  await page.locator("#service-submit").click();
