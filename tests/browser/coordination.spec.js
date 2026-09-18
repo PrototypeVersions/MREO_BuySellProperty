@@ -42,6 +42,7 @@ test("coordination request is the same object across buyer and service partner v
  await expect(page.locator("#service-submit")).toBeVisible();
  await page.locator("#service-submit").click();
  await expect(page.locator("#client-request-status")).toBeVisible();
+ await expect.poll(async()=>Math.abs(await page.locator("#service-attention-v5").evaluate(el=>el.getBoundingClientRect().top)),{timeout:2500}).toBeLessThan(120);
  await expect(page.locator("#client-status-pill")).toHaveText("Submitted");
  await expect(page.locator("#client-request-summary")).toContainText("$30,000");
 
