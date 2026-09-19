@@ -46,7 +46,7 @@ test("buyer interest without an auction requires choosing a listing",async({page
  await expect(page.locator("#bid-form")).toBeVisible();
  await page.goto("/payment.html?role=buyer");
  await expect(page.locator("#payment-credit")).toHaveText("$1.00 test");
- await expect(page.locator("#payment-submit")).toHaveText("Continue to auction →");
+ await expect(page.locator("#payment-submit")).toHaveText("Auction →");
  await page.locator("#payment-submit").click();
  await expect(page).toHaveURL(/auction\.html\?view=buyer&select=1&address=/);
  await expect(page.locator("#auction-select")).toHaveValue("");
@@ -81,7 +81,7 @@ test("every sample property opens its own auction through buyer participation",a
    await page.getByRole("button",{name:"Submit Buyer Interest",exact:true}).click();
    await expect(page).toHaveURL(/payment\.html\?role=buyer$/);
    if(index===0)await page.locator("#payment-consent").check();
-   else await expect(page.locator("#payment-submit")).toHaveText("Continue to auction →");
+   else await expect(page.locator("#payment-submit")).toHaveText("Auction →");
    await page.locator("#payment-submit").click();
    await expect(page).toHaveURL(new RegExp("auction\\.html\\?id="+id+"&view=buyer$"));
    await expect(page.locator("#auction-select")).toHaveValue(id);
@@ -105,7 +105,7 @@ test("older address-only Plano interest opens the matching auction with existing
  await expect(page.locator("#auction-title")).toHaveText(address);
  await page.goto("/payment.html?role=buyer");
  await expect(page.locator("#payment-credit")).toHaveText("$1.00 test");
- await expect(page.locator("#payment-submit")).toHaveText("Continue to auction →");
+ await expect(page.locator("#payment-submit")).toHaveText("Auction →");
  await page.locator("#payment-submit").click();
  await expect(page).toHaveURL(/auction\.html\?id=demo-plano&view=buyer$/);
  await expect(page.locator("#auction-select")).toHaveValue("demo-plano");
@@ -360,7 +360,7 @@ test("all sample auctions migrate without losing saved Grapevine interest, credi
  await expect(page.locator("#auction-title")).toHaveText("805 Vineyard Crossing, Grapevine, TX 76051");
  await page.goto("/payment.html?role=buyer");
  await expect(page.locator("#payment-credit")).toHaveText("$1.00 test");
- await expect(page.locator("#payment-submit")).toHaveText("Continue to auction →");
+ await expect(page.locator("#payment-submit")).toHaveText("Auction →");
  await page.locator("#payment-submit").click();
  await expect(page).toHaveURL(/auction\.html\?id=demo-grapevine&view=buyer$/);
  await expect(page.locator("#auction-title")).toHaveText("805 Vineyard Crossing, Grapevine, TX 76051");
