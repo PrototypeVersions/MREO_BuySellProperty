@@ -161,7 +161,7 @@ function stableMediaIndex(key,count){
  if(!count)return 0;let hash=2166136261;for(const ch of String(key||"")){hash^=ch.charCodeAt(0);hash=Math.imul(hash,16777619);}return(hash>>>0)%count;
 }
 async function hydrateSellerThumbnails(container){
- const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[stableMediaIndex(img.dataset.mediaKey,photos.length)],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
+ const images=[...container.querySelectorAll("img[data-media-key]")];await Promise.all(images.map(async img=>{try{const media=await S.getMedia(img.dataset.mediaKey),photos=media.filter(item=>(item.type||"").startsWith("image/")&&item.blob);if(!photos.length)return;const chosen=photos[0],url=URL.createObjectURL(chosen.blob);img.src=url;img.alt="Seller-provided property photograph";}catch{}}));
 }
 function marketplace(){
  const container=$("new-listings");if(!container)return;
