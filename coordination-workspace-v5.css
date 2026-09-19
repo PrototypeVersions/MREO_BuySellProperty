@@ -394,3 +394,29 @@ html{scroll-behavior:smooth}
   .network-abstract-svg{height:245px;width:116%;transform:scale(1.03)}
   .network-abstract-label{font-size:16px}
 }
+
+
+/* Portfolio-style property network artwork */
+.network-property-art-stage{
+  min-height:315px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  background:#f4efe4;
+}
+.network-property-art{
+  display:block;
+  width:100%;
+  height:330px;
+  object-fit:cover;
+  object-position:center;
+}
+@media(max-width:920px){
+  .network-property-art-stage{min-height:275px}
+  .network-property-art{height:290px}
+}
+@media(max-width:560px){
+  .network-property-art-stage{min-height:225px}
+  .network-property-art{height:245px}
+}
