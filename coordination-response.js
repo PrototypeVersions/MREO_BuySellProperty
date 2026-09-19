@@ -38,7 +38,7 @@
         ]},
         {title:"Preliminary title requirements",description:"Items the provider expects to resolve before final transfer.",fields:[
           {key:"titleFindings",label:"Preliminary title findings",type:"textarea",default:"No material title exceptions identified in this demonstration review. Standard verification of ownership, payoff status, taxes, and recording information remains part of final closing preparation."},
-          {key:"requirements",label:"Buyer / transaction requirements",type:"textarea",default:"Confirm legal name and vesting; verify cash or lender funding instructions; provide government-issued identification at signing; acknowledge final settlement figures; complete required signatures."},
+          {key:"requirements",label:"Buyer / seller / transaction requirements",type:"textarea",default:"Buyer: confirm legal name, vesting, funding instructions, identification, settlement figures, and required signatures. Seller: confirm legal ownership details, payoff or lien information where applicable, seller settlement instructions, and required signatures."},
           {key:"closingInstructions",label:"Closing instructions",type:"textarea",default:"Final settlement figures and signing instructions will be issued after client approval of this preliminary response and completion of the remaining title review."}
         ]},
         {title:"Provider notes",fields:[{key:"providerNotes",label:"Provider notes",type:"textarea",default:"This is a fictional title / settlement response for the MREO prototype. Final legal, title, escrow, recording, and settlement requirements would be determined by the participating licensed provider."}]}
