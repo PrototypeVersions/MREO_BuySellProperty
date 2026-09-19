@@ -30,7 +30,42 @@
   const contextLabel=params.get("address")||params.get("title")||"4218 Maple Ridge Drive, Dallas, TX 75229";
   const contextPrice=params.get("price")||"";
   let scheduled=false, applying=false;
+  let primaryImageUrl="";
+  let primaryImageLoading=false;
   const profilePromises={};
+
+  function applyPrimaryPropertyImage(url){
+    if(!url)return;
+    ["coord-record-image","service-record-image"].forEach(id=>{
+      const img=$(id);
+      if(!img)return;
+      if(img.src!==url)img.src=url;
+      img.alt=`Primary seller-provided photograph for ${contextLabel}`;
+      img.hidden=false;
+    });
+  }
+
+  async function hydratePrimaryPropertyImage(){
+    if(primaryImageUrl){applyPrimaryPropertyImage(primaryImageUrl);return;}
+    const mediaKey=params.get("mediaKey")||"";
+    if(mediaKey&&globalThis.MreoService?.getMedia&&!primaryImageLoading){
+      primaryImageLoading=true;
+      try{
+        const media=await globalThis.MreoService.getMedia(mediaKey);
+        const photo=media.find(item=>(item.type||"").startsWith("image/")&&item.blob);
+        if(photo){
+          primaryImageUrl=URL.createObjectURL(photo.blob);
+          applyPrimaryPropertyImage(primaryImageUrl);
+          return;
+        }
+      }catch{}finally{primaryImageLoading=false;}
+    }
+    const fallback=params.get("image")||"";
+    if(/^(https?:\/\/|assets\/)/i.test(fallback)){
+      primaryImageUrl=fallback;
+      applyPrimaryPropertyImage(primaryImageUrl);
+    }
+  }
 
   function role(){
     const value=new URLSearchParams(location.search).get("role")||localStorage.getItem("mreo:coordination:role")||"buyer";
@@ -470,6 +505,7 @@
       prefillKnownInformation();
       wireProviderSelection();
       renderProviderQueue();
+      hydratePrimaryPropertyImage();
     }finally{applying=false;}
   }
   function schedule(){
