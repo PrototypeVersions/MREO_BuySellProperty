@@ -280,7 +280,7 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
 });
 
 
-test("streamlined coordination hub uses one attention indicator and clearer service names",async({page})=>{
+test("coordination hub scopes provider attention and demo work to the active property",async({page})=>{
  const base="/coordination.html?type=property&auction=coord-v5-hub&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
  await page.goto(base);
  await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-hub");localStorage.removeItem("mreo:coordination:provider-demo:v2");});
@@ -293,11 +293,16 @@ test("streamlined coordination hub uses one attention indicator and clearer serv
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
  await expect(page.locator(".workspace-stats")).toBeHidden();
  await expect(page.locator("#coordination-timeline").locator("xpath=ancestor::article[1]")).toBeHidden();
+
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await expect(page.locator(".provider-summary-grid")).toBeHidden();
- await expect(page.locator("#provider-queue [data-v5-provider-row]")).toHaveCount(8);
- await expect(page.locator("#provider-queue")).toContainText("Review closing profile");
- await expect(page.locator("#provider-queue")).toContainText("Prepare rehabilitation estimate");
+ await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Waiting");
+ await expect(page.locator("#coord-attention-v5 .attention-copy")).toContainText("4218 Maple Ridge Drive");
+ await expect(page.locator("#coord-attention-v5 .attention-copy")).not.toContainText("2605 Preston Meadow");
+ await expect(page.locator("#provider-queue [data-v5-provider-row]")).toHaveCount(1);
+ await expect(page.locator("#provider-queue")).toContainText("4218 Maple Ridge Drive");
+ await expect(page.locator("#provider-queue")).not.toContainText("2605 Preston Meadow");
+ await expect(page.locator("#provider-queue")).not.toContainText("940 Hickory Grove");
 });
 
 test("coordination reuses buyer information and offers service-specific provider choices",async({page})=>{
@@ -332,10 +337,11 @@ test("selected provider follows a submitted request into the Service Partner vie
 });
 
 test("fictional provider queue jobs require an actual review before completing provider steps",async({page})=>{
- await page.goto("/coordination.html?role=provider&auction=coord-v5-demo-jobs&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229");
+ await page.goto("/coordination.html?role=provider&auction=coord-v5-demo-jobs&address=940%20Hickory%20Grove%20Road%2C%20Denton%2C%20TX%2076209");
  await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-demo-jobs");localStorage.removeItem("mreo:coordination:provider-demo:v2");});
  await page.reload();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-queue [data-v5-provider-row]")).toHaveCount(1);
  const row=page.locator("#provider-queue [data-v5-provider-row]").filter({hasText:"940 Hickory Grove Road"});
  await expect(row).toContainText("Action needed");
  await row.getByRole("link",{name:"Open provider job →"}).click();
