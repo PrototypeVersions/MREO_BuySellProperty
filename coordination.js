@@ -264,7 +264,20 @@ Property: ${context.label}
     }
     try {
       const parsed = JSON.parse(localStorage.getItem(stateKey) || "null");
-      if (parsed && parsed.version === 3 && parsed.requests && parsed.documents && parsed.activity) return parsed;
+      if (parsed && parsed.version === 3 && parsed.requests && parsed.documents && parsed.activity) {
+        if (context.stage === "won" && parsed.acquisition?.status === "planning") {
+          parsed.acquisition.status = "pending-closing";
+          parsed.acquisition.completedAt = null;
+          parsed.activity.unshift({id:`stage-${Date.now()}`,at:Date.now(),actor:"Auction",important:true,text:"The participation record advanced into the winning transaction. Closing is now required."});
+          localStorage.setItem(stateKey, JSON.stringify(parsed));
+        } else if (context.stage === "complete" && parsed.acquisition && parsed.acquisition.status !== "complete") {
+          parsed.acquisition.status = "complete";
+          parsed.acquisition.completedAt = Date.now();
+          parsed.activity.unshift({id:`stage-${Date.now()}`,at:Date.now(),actor:"MREO",important:true,text:"The transaction advanced into the completed property record."});
+          localStorage.setItem(stateKey, JSON.stringify(parsed));
+        }
+        return parsed;
+      }
     } catch {}
     const fresh = defaultState();
     localStorage.setItem(stateKey, JSON.stringify(fresh));
