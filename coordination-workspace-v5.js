@@ -374,10 +374,14 @@
   function actualProviderRows(state,specialty){
     return Object.entries(state?.requests||{}).filter(([key,request])=>request&&(specialty==="all"||specialty===key)).map(([key,request])=>{
       const label=serviceLabels[key]?.title||key;
-      const action=providerActionForRequest(key,request)||{on:false,title:"Complete",copy:"This request is complete."};
+      const complete=request.status==="complete";
+      const action=complete
+        ? {on:false,stateLabel:"Complete",title:"Complete",copy:"This request is complete."}
+        : (providerActionForRequest(key,request)||{on:false,stateLabel:"Waiting",title:"Waiting",copy:"No provider action is required right now."});
       return {
         id:`actual-${key}`,service:key,property:contextLabel,client:request.data?.clientAccountName||(request.ownerRole==="seller"?"Demo Seller":"Demo Buyer"),
-        provider:request.provider||"Awaiting provider match",actionNeeded:!!action.on,status:action.title,summary:action.copy,
+        provider:request.provider||"Awaiting provider match",actionNeeded:!!action.on,stateLabel:action.stateLabel||(action.on?"Action needed":"Waiting"),complete,
+        status:action.title,summary:action.copy,
         meta:[request.data?.providerPreference||"Provider preference not specified",request.attachments?.length?`${request.attachments.length} supporting file(s)`:"Connected records only",request.status.replace(/-/g," ")],
         href:serviceHref(key,"provider"),actual:true,label
       };
@@ -391,23 +395,52 @@
     const state=loadState();
     const actual=actualProviderRows(state,specialty);
     const examples=demoJobs.map(currentDemoJob).filter(job=>specialty==="all"||specialty===job.service).map(job=>({
-      ...job,label:serviceLabels[job.service]?.title||job.service,href:`coordination-provider-job.html?job=${encodeURIComponent(job.id)}`
+      ...job,
+      stateLabel:job.actionNeeded?"Action needed":"Waiting",
+      complete:false,
+      label:serviceLabels[job.service]?.title||job.service,
+      href:`coordination-provider-job.html?job=${encodeURIComponent(job.id)}`
     }));
     const rows=[...actual,...examples];
-    const key=JSON.stringify(rows.map(row=>[row.id,row.actionNeeded,row.status,row.provider,row.meta]));
+    const activeRows=rows.filter(row=>!row.complete);
+    const completedRows=rows.filter(row=>row.complete);
+    const key=JSON.stringify(rows.map(row=>[row.id,row.stateLabel,row.status,row.provider,row.meta]));
     if(queue.dataset.v5Key===key&&queue.querySelector("[data-v5-provider-row]"))return;
     queue.dataset.v5Key=key;
-    queue.innerHTML=rows.map(row=>`
-      <article class="provider-job provider-job-v5" data-v5-provider-row data-provider-source="${row.actual?"live":"demo"}">
-        <div class="provider-job-signal"><strong>${row.actionNeeded?"Action needed":"Waiting"}</strong></div>
+
+    const rowHtml=(row,completed=false)=>`
+      <article class="provider-job provider-job-v5${completed?" provider-job-complete":""}" data-v5-provider-row data-provider-source="${row.actual?"live":"demo"}" data-provider-state="${completed?"complete":row.actionNeeded?"action":"waiting"}">
+        <div class="provider-job-signal${completed?" is-complete":""}"><strong>${esc(row.stateLabel||(row.actionNeeded?"Action needed":"Waiting"))}</strong></div>
         <div class="provider-job-main">
           <div class="provider-job-topline"><span class="coordination-number">${esc(serviceLabels[row.service]?.eyebrow||row.label)}</span><span>${esc(row.provider)}</span></div>
           <h3>${esc(row.property)}</h3>
           <p><strong>${esc(row.status)}</strong> · ${esc(row.summary)}</p>
           <div class="provider-job-meta">${(row.meta||[]).map(item=>`<span>${esc(item)}</span>`).join("")}</div>
         </div>
-        <div class="provider-job-action"><a class="primary-button button-blue" href="${row.href}">${row.actual?"Open request →":"Open provider job →"}</a></div>
-      </article>`).join("");
+        <div class="provider-job-action"><a class="${completed?"secondary-button":"primary-button button-blue"}" href="${row.href}">${completed?"View completed request →":row.actual?"Open request →":"Open provider job →"}</a></div>
+      </article>`;
+
+    queue.innerHTML=activeRows.length
+      ? activeRows.map(row=>rowHtml(row,false)).join("")
+      : '<div class="provider-empty-queue"><strong>No active provider work</strong><p>There are no requests currently requiring provider action or waiting on another party.</p></div>';
+
+    let completedSection=$("provider-completed-section-v6");
+    if(!completedSection){
+      completedSection=document.createElement("section");
+      completedSection.id="provider-completed-section-v6";
+      completedSection.className="provider-queue-section provider-completed-section";
+      completedSection.innerHTML='<p class="section-label">Completed</p><h2>Completed requests</h2><div class="provider-queue" id="provider-completed-queue-v6"></div>';
+      queue.closest(".provider-queue-section")?.insertAdjacentElement("afterend",completedSection);
+    }
+    const completedQueue=$("provider-completed-queue-v6");
+    if(completedRows.length){
+      completedSection.hidden=false;
+      completedQueue.innerHTML=completedRows.map(row=>rowHtml(row,true)).join("");
+    }else{
+      completedSection.hidden=true;
+      completedQueue.innerHTML="";
+    }
+
     const heading=$("provider-queue-title");
     setTextIfChanged(heading,"Provider work queue");
     const intro=$("provider-inbox-heading")?.nextElementSibling;
