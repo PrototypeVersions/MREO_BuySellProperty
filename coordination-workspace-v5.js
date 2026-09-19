@@ -105,7 +105,7 @@
   function currentDemoJob(job){
     const saved=demoJobState()[job.id];
     if(!saved)return job;
-    return {...job,actionNeeded:saved.actionNeeded,status:saved.status||job.status,summary:saved.summary||job.summary};
+    return {...job,...saved};
   }
 
   async function profileFor(currentRole){
@@ -460,10 +460,10 @@
     const actual=actualProviderRows(state,specialty);
     const examples=demoJobs.map(currentDemoJob).filter(job=>specialty==="all"||specialty===job.service).map(job=>({
       ...job,
-      stateLabel:job.actionNeeded?"Action needed":"Waiting",
-      complete:false,
+      stateLabel:job.complete?"Complete":job.actionNeeded?"Action needed":"Waiting",
+      complete:!!job.complete,
       label:serviceLabels[job.service]?.title||job.service,
-      href:`coordination-provider-job.html?job=${encodeURIComponent(job.id)}`
+      href:`coordination-provider-job.html?job=${encodeURIComponent(job.id)}&role=provider`
     }));
     const rows=[...actual,...examples];
     const activeRows=rows.filter(row=>!row.complete);
