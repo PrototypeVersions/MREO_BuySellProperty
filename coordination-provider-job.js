@@ -3,6 +3,7 @@
 
   const params=new URLSearchParams(location.search);
   const id=params.get("job")||"";
+  const returnTarget=params.get("return")||"coordination.html";
   const jobs=globalThis.MREO_PROVIDER_DEMO_JOBS||[];
   const job=jobs.find(item=>item.id===id);
   const $=id=>document.getElementById(id);
@@ -33,6 +34,17 @@
   }
 
   function roleLabel(value){return roleNames[value]||"Client";}
+  function workspaceHref(nextRole){
+    try{
+      const url=new URL(returnTarget,location.href);
+      if(url.origin!==location.origin||!url.pathname.endsWith("/coordination.html"))throw Error();
+      url.searchParams.set("role",nextRole);
+      url.hash=nextRole==="provider"?"provider-queue-title":"";
+      return url.href;
+    }catch{
+      return nextRole==="provider"?"coordination.html?role=provider#provider-queue-title":`coordination.html?role=${nextRole}`;
+    }
+  }
 
   function attentionFor(data){
     if(data.complete||data.phase==="complete"){
@@ -221,7 +233,7 @@
 
     const back=document.createElement("a");
     back.className="secondary-button";
-    back.href=role==="provider"?"coordination.html?role=provider#provider-queue-title":`coordination.html?role=${role}`;
+    back.href=workspaceHref(role);
     back.textContent=role==="provider"?"Back to work queue":`Back to ${roleLabel(role)} workspace`;
     actions.appendChild(back);
   }
@@ -234,6 +246,8 @@
     }
 
     updateRoleButtons();
+    const topBack=document.querySelector("main > .back-link");
+    if(topBack)topBack.href=workspaceHref(role);
     document.title=`${data.property} | ${roleLabel(role)} | MREO Coordination`;
     $("provider-job-service").textContent=labels[data.service]||"Service Partner";
     $("provider-job-property").textContent=data.property;
