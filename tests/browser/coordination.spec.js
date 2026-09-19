@@ -57,19 +57,29 @@ test("coordination request is the same object across buyer and service partner v
  await expect(page.locator('input[name="totalPrice"]')).toHaveValue("$28,400");
  await expect(page.locator('textarea[name="lineItems"]')).toContainText("Flooring");
  await page.getByRole("button",{name:"Send response to client"}).click();
+ await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Waiting");
+ await expect(page.locator("#response-attention-v6 .attention-title")).toContainText("Waiting for buyer review");
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Waiting");
+ await expect(page.getByRole("button",{name:"Approve response"})).toHaveCount(0);
  await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#response-attention-v6 .attention-title")).toContainText("Review the provider response");
  await expect(page.getByRole("heading",{name:"Review provider response"})).toBeVisible();
  await expect(page.locator("#client-response-details")).toContainText("$28,400");
  await expect(page.locator("#client-response-details")).toContainText("24 calendar days");
  await page.getByRole("button",{name:"Approve response"}).click();
  await expect(page).toHaveURL(/coordination-service\.html\?/);
  await expect(page.locator("#client-status-pill")).toHaveText("Approved");
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Waiting");
 
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
  await page.getByRole("button",{name:"Start work"}).click();
  await expect(page.locator("#provider-status-pill")).toHaveText("In progress");
  await page.getByRole("button",{name:"Mark complete"}).click();
  await expect(page.locator("#provider-status-pill")).toHaveText("Complete");
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Complete");
  await expect(page.locator("#service-document-library")).toContainText("Construction completion");
 });
 
@@ -286,4 +296,47 @@ test("fictional provider queue jobs open into interactive provider detail pages"
  await page.getByRole("button",{name:"Mark estimate prepared"}).click();
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
  await expect(page.locator("#provider-job-status")).toContainText("Waiting for owner review");
+});
+
+
+test("provider-response attention states stay correct for every service pathway and perspective",async({page})=>{
+ const services=["title","contractors","realtors","rentals"];
+ for(const service of services){
+   const auction="coord-attention-"+service;
+   const key="mreo:coordination:v3:"+auction;
+   await page.goto("/coordination.html");
+   await page.evaluate(({key,service})=>{
+     const requests={title:null,contractors:null,realtors:null,rentals:null};
+     requests[service]={
+       id:service+"-attention-test",
+       service,
+       ownerRole:"buyer",
+       status:"proposal",
+       createdAt:Date.now()-10000,
+       updatedAt:Date.now(),
+       lastTransitionAt:Date.now(),
+       provider:"Test Participating Provider · demonstration",
+       data:{},
+       attachments:[],
+       proposal:{revision:1,summary:"Test provider response",fields:{},sentAt:Date.now(),at:Date.now()}
+     };
+     localStorage.setItem(key,JSON.stringify({version:3,acquisition:{status:"complete"},requests,documents:[],activity:[]}));
+   },{key,service});
+   const url="/coordination-response.html?type=property&auction="+auction+"&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000&service="+service+"&role=buyer";
+   await page.goto(url);
+   await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Action needed");
+   await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+   await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Waiting");
+   await page.getByRole("button",{name:"Seller",exact:true}).click();
+   await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Waiting");
+
+   await page.evaluate(({key,service})=>{
+     const state=JSON.parse(localStorage.getItem(key));
+     state.requests[service].status="complete";
+     state.requests[service].updatedAt=Date.now();
+     localStorage.setItem(key,JSON.stringify(state));
+   },{key,service});
+   await page.reload();
+   await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Complete");
+ }
 });
