@@ -33,45 +33,46 @@
       </div>
 
       <aside class="record-card record-card-large" aria-label="Selected property record">
-        <div class="provider-network-visual" id="coord-network-visual" hidden>
-          <div class="network-property-grid" aria-label="Connected property network">
-            <article class="network-property-card">
-              <div class="network-property-art network-art-preston" aria-hidden="true">
-                <span class="network-building building-modern"></span>
-                <span class="network-landscape landscape-palms"></span>
-              </div>
-              <span class="network-status is-action"><i></i>Action needed</span>
-            </article>
-            <article class="network-property-card">
-              <div class="network-property-art network-art-hickory" aria-hidden="true">
-                <span class="network-building building-cottage"></span>
-                <span class="network-landscape landscape-trees"></span>
-              </div>
-              <span class="network-status is-action"><i></i>Action needed</span>
-            </article>
-            <article class="network-property-card">
-              <div class="network-property-art network-art-travis" aria-hidden="true">
-                <span class="network-building building-desert"></span>
-                <span class="network-landscape landscape-mountain"></span>
-              </div>
-              <span class="network-status is-action"><i></i>Action needed</span>
-            </article>
-            <article class="network-property-card">
-              <div class="network-property-art network-art-maple" aria-hidden="true">
-                <span class="network-building building-lodge"></span>
-                <span class="network-landscape landscape-water"></span>
-              </div>
-              <span class="network-status is-waiting"><i></i>Waiting</span>
-            </article>
+        <div class="provider-network-visual provider-network-abstract" id="coord-network-visual" hidden>
+          <div class="network-abstract-stage" role="img" aria-label="Abstract line drawing representing a connected service network">
+            <svg class="network-abstract-svg" viewBox="0 0 760 430" aria-hidden="true" focusable="false">
+              <g class="network-traces">
+                <path d="M76 225 C132 91 260 84 338 174 S486 307 684 153"></path>
+                <path d="M88 318 C190 244 210 120 350 205 S520 348 692 300"></path>
+                <path d="M118 104 C205 182 285 310 420 213 S575 70 662 114"></path>
+                <path d="M172 365 C229 301 288 270 380 286 S550 257 622 202"></path>
+                <path d="M212 62 C274 120 305 154 379 135 S526 132 570 80"></path>
+              </g>
+
+              <g class="network-rings">
+                <circle cx="376" cy="215" r="123"></circle>
+                <circle cx="376" cy="215" r="76"></circle>
+              </g>
+
+              <g class="network-nodes">
+                <circle class="node-primary" cx="376" cy="215" r="18"></circle>
+                <circle cx="118" cy="104" r="10"></circle>
+                <circle cx="76" cy="225" r="8"></circle>
+                <circle cx="88" cy="318" r="12"></circle>
+                <circle cx="172" cy="365" r="7"></circle>
+                <circle cx="212" cy="62" r="9"></circle>
+                <circle cx="338" cy="174" r="7"></circle>
+                <circle cx="350" cy="205" r="8"></circle>
+                <circle cx="420" cy="213" r="9"></circle>
+                <circle cx="570" cy="80" r="8"></circle>
+                <circle cx="622" cy="202" r="10"></circle>
+                <circle cx="662" cy="114" r="7"></circle>
+                <circle cx="684" cy="153" r="10"></circle>
+                <circle cx="692" cy="300" r="12"></circle>
+              </g>
+
+              <g class="network-orbit">
+                <path d="M215 198 C256 91 462 58 570 153"></path>
+                <path d="M203 248 C301 356 522 349 613 229"></path>
+              </g>
+            </svg>
           </div>
-          <div class="network-property-footer">
-            <p class="record-eyebrow">Connected property network</p>
-            <span class="record-status network-inbox-label">Service Partner network inbox</span>
-            <div class="network-job-stats" aria-label="Network job statistics">
-              <div><strong id="coord-network-active">7</strong><span>active jobs</span></div>
-              <div><strong id="coord-network-action">3</strong><span>need provider action</span></div>
-            </div>
-          </div>
+          <p class="record-eyebrow network-abstract-label">Connected property network</p>
         </div>
 
         <div id="coord-property-record-content">
