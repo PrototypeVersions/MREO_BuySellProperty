@@ -188,6 +188,7 @@
           responsePrimaryImageUrl=URL.createObjectURL(photo.blob);
           img.src=responsePrimaryImageUrl;
           img.alt="Primary seller-provided photograph for "+context.label;
+          img.dataset.primaryMediaName=photo.name||"";
           img.hidden=false;
           return;
         }
