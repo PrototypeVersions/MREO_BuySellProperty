@@ -342,3 +342,45 @@ test("provider-response attention states stay correct for every service pathway 
    await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Complete");
  }
 });
+
+
+test("completed provider work is separated from the active queue and labeled Complete",async({page})=>{
+ const auction="coord-completed-provider-queue";
+ const key="mreo:coordination:v3:"+auction;
+ await page.goto("/coordination.html?type=property&auction="+auction+"&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000&role=provider");
+ await page.evaluate(({key})=>{
+   localStorage.setItem(key,JSON.stringify({
+     version:3,
+     acquisition:{status:"complete"},
+     requests:{
+       title:{
+         id:"title-complete-test",
+         service:"title",
+         ownerRole:"buyer",
+         status:"complete",
+         createdAt:Date.now()-20000,
+         updatedAt:Date.now(),
+         lastTransitionAt:Date.now(),
+         provider:"Northstar Title & Settlement · demonstration",
+         data:{providerPreference:"Northstar Title & Settlement · demonstration"},
+         attachments:[],
+         proposal:null,
+         clientClosingConfirmed:true
+       },
+       contractors:null,
+       realtors:null,
+       rentals:null
+     },
+     documents:[],
+     activity:[]
+   }));
+ },{key});
+ await page.reload();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator('#provider-queue [data-provider-source="live"]')).toHaveCount(0);
+ const completed=page.locator('#provider-completed-queue-v6 [data-provider-source="live"]');
+ await expect(completed).toHaveCount(1);
+ await expect(completed.locator(".provider-job-signal")).toHaveText("Complete");
+ await expect(completed).toContainText("This request is complete.");
+ await expect(completed.getByRole("link",{name:"View completed request →"})).toBeVisible();
+});
