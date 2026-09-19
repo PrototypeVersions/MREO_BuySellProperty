@@ -690,8 +690,9 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-network-visual .record-eyebrow")).toHaveText("Connected property network");
  await expect(page.locator("#coord-network-visual .network-abstract-stage")).toBeVisible();
  await expect(page.locator("#coord-network-visual .network-abstract-svg")).toBeVisible();
- await expect(page.locator("#coord-network-visual .network-nodes circle")).toHaveCount(14);
- await expect(page.locator("#coord-network-visual .network-traces path")).toHaveCount(5);
+ await expect(page.locator("#coord-network-visual .network-abstract-label")).toHaveCSS("font-size","19px");
+ await expect(page.locator("#coord-network-visual .network-nodes circle")).toHaveCount(22);
+ await expect(page.locator("#coord-network-visual .network-traces path")).toHaveCount(8);
  await expect(page.locator("#coord-network-visual .network-property-card")).toHaveCount(0);
  await expect(page.locator("#coord-network-visual .network-inbox-label")).toHaveCount(0);
  await expect(page.locator("#coord-network-active")).toHaveCount(0);
