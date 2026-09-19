@@ -639,8 +639,14 @@ Property: ${context.label}
     return rows.map(([label,value]) => `<div class="request-summary-row"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
   }
 
-  function workflowStepIndex(status, total) {
+  function workflowStepIndex(status, total, request, serviceKey) {
     if (!status) return 0;
+    if (serviceKey === "title") {
+      const buyerSigned = !!request?.buyerClosingConfirmed;
+      const sellerSigned = !!request?.sellerClosingConfirmed;
+      const map = {submitted:1, matched:2, "needs-info":2, proposal:3, "counterparty-action":4, approved:5, "in-progress":buyerSigned && sellerSigned ? 6 : 5, complete:total};
+      return Math.min(total, map[status] ?? 0);
+    }
     const map = {submitted:1, matched:2, "needs-info":2, proposal:3, approved:4, "in-progress":4, complete:total};
     return Math.min(total, map[status] ?? 0);
   }
@@ -648,7 +654,7 @@ Property: ${context.label}
   function renderWorkflow(config, request) {
     const list = $("service-workflow");
     if (!list) return;
-    const index = workflowStepIndex(request?.status, config.steps.length);
+    const index = workflowStepIndex(request?.status, config.steps.length, request, currentServiceKey);
     list.innerHTML = config.steps.map((step, i) => `<li class="${request?.status === "complete" || i < index ? "is-complete" : i === index ? "is-current" : ""}">${esc(step)}</li>`).join("");
     if ($("workflow-current-status")) $("workflow-current-status").textContent = request ? statusLabels[request.status] : "Not started";
     if ($("workflow-current-note")) $("workflow-current-note").textContent = request ? statusNotes[request.status] : "Create a request to begin this pathway.";
