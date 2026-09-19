@@ -235,7 +235,6 @@
       if (value) buyer.set(key, value);
     });
     document.getElementById("property-prepare-interest").href = "buyer.html?" + buyer.toString();
-    document.getElementById("property-coordinate").href = "coordination.html?" + contextQuery().toString();
 
     const mediaKey = params.get("mediaKey");
     if (mediaKey) loadSellerMedia(mediaKey, address).catch(() => {});
