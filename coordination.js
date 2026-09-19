@@ -345,7 +345,7 @@ Property: ${context.label}
       "in-progress":"complete"
     }[request.status];
     if (!next) { toast("This request is already complete."); return false; }
-    if (serviceKey === "title" && request.status === "in-progress" && !request.clientClosingConfirmed) { toast("Switch to the Buyer view and confirm the closing / signing step before completing the title workflow."); return false; }
+    if (serviceKey === "title" && request.status === "in-progress" && !request.clientClosingConfirmed) { toast(`Switch to the ${request.ownerRole === "seller" ? "Seller" : "Buyer"} view and confirm the closing / signing step before completing the title workflow.`); return false; }
     const config = services[serviceKey];
     const messages = {
       matched:`${config.provider} accepted the request and opened the shared property packet.`,
@@ -666,18 +666,22 @@ Property: ${context.label}
     $("client-status-copy").textContent = statusNotes[request.status];
     $("client-request-summary").innerHTML = requestSummaryHtml(request);
     const actions = $("client-request-actions");
+    const isOwner = role === request.ownerRole;
+    const ownerLabel = request.ownerRole === "seller" ? "seller" : "buyer";
     actions.innerHTML = "";
     if (request.status === "needs-info") {
-      actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="provide-info">Provide requested information</button>';
+      if (isOwner) actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="provide-info">Provide requested information</button>';
+      else $("client-status-copy").textContent = `The provider requested additional information from the ${ownerLabel} who submitted this request.`;
     } else if (request.status === "proposal") {
       const amount = request.proposal?.amount ? ` · ${money(request.proposal.amount)}` : "";
       $("client-status-copy").textContent = `${request.proposal?.body || config.proposalBody}${amount}`;
-      actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="approve">Approve provider response</button><button type="button" class="secondary-button" data-client-action="request-change">Request a change</button>';
-    } else if (currentServiceKey === "title" && request.status === "in-progress" && role === "buyer" && !request.clientClosingConfirmed) {
-      $("client-status-copy").textContent = "The settlement provider is preparing the closing. Confirm this fictional signing / closing step once the buyer has completed the required signing.";
+      if (isOwner) actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="approve">Approve provider response</button><button type="button" class="secondary-button" data-client-action="request-change">Request a change</button>';
+      else $("client-status-copy").textContent = `The provider response is ready and is waiting for the ${ownerLabel} who submitted this request to review it.`;
+    } else if (currentServiceKey === "title" && request.status === "in-progress" && isOwner && !request.clientClosingConfirmed) {
+      $("client-status-copy").textContent = "The settlement provider is preparing the closing. Confirm this fictional signing / closing step once you have completed the required signing.";
       actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="confirm-closing">Confirm closing / signing complete</button>';
     } else if (currentServiceKey === "title" && request.status === "in-progress" && request.clientClosingConfirmed) {
-      $("client-status-copy").textContent = "Buyer closing / signing is confirmed. The settlement provider can now finalize the transfer and publish the final closing record.";
+      $("client-status-copy").textContent = "Client closing / signing is confirmed. The settlement provider can now finalize the transfer and publish the final closing record.";
     } else if (request.status === "complete") {
       const completionDoc = state.documents.find((doc) => doc.id === `${currentServiceKey}-completion-${request.id}`);
       if (completionDoc) actions.innerHTML = `<button type="button" class="secondary-button" data-download-document="${esc(completionDoc.id)}">Download completion record</button>`;
@@ -688,7 +692,7 @@ Property: ${context.label}
       if (button.dataset.clientAction === "request-change") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} requested a revision to the provider response.`);
       if (button.dataset.clientAction === "confirm-closing") {
         const active = state.requests[currentServiceKey];
-        if (active) { active.clientClosingConfirmed = true; active.updatedAt = Date.now(); active.lastTransitionAt = active.updatedAt; addActivity("Demo Buyer confirmed the fictional closing / signing step.", "Buyer", true); saveState(); }
+        if (active) { active.clientClosingConfirmed = true; active.updatedAt = Date.now(); active.lastTransitionAt = active.updatedAt; const actor = active.ownerRole === "seller" ? "Seller" : "Buyer"; addActivity(`${active.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"} confirmed the fictional closing / signing step.`, actor, true); saveState(); }
       }
       renderAll();
     }));
@@ -732,8 +736,8 @@ Property: ${context.label}
       addButton("Start work", "in-progress", true);
     } else if (request.status === "in-progress") {
       if (currentServiceKey === "title" && !request.clientClosingConfirmed) {
-        guidance.textContent = "Closing preparation is in progress. Waiting for the buyer to confirm the fictional signing / closing step before final transfer can be completed.";
-        addButton("Waiting for buyer closing confirmation", "wait", false, true);
+        guidance.textContent = `Closing preparation is in progress. Waiting for the ${request.ownerRole === "seller" ? "seller" : "buyer"} who submitted the request to confirm the fictional signing / closing step before final transfer can be completed.`;
+        addButton(`Waiting for ${request.ownerRole === "seller" ? "seller" : "buyer"} closing confirmation`, "wait", false, true);
       } else {
         guidance.textContent = "Work is in progress. When finished, complete the job and publish the final record.";
         addButton("Mark complete", "complete", true); addButton("Request information", "needs-info");
