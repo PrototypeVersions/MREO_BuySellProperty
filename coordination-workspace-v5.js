@@ -405,7 +405,7 @@
     const activeRows=rows.filter(row=>!row.complete);
     const completedRows=rows.filter(row=>row.complete);
     const key=JSON.stringify(rows.map(row=>[row.id,row.stateLabel,row.status,row.provider,row.meta]));
-    if(queue.dataset.v5Key===key&&queue.querySelector("[data-v5-provider-row]"))return;
+    if(queue.dataset.v5Key===key&&(queue.querySelector("[data-v5-provider-row]")||document.querySelector("#provider-completed-queue-v6 [data-v5-provider-row]")))return;
     queue.dataset.v5Key=key;
 
     const rowHtml=(row,completed=false)=>`
