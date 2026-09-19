@@ -678,17 +678,31 @@ test("Coordination Reset all test data clears cross-workspace browser state",asy
 });
 
 
-test("default Coordinate workspace never mixes provider work from another address",async({page})=>{
- await page.goto("/coordination.html");
- await page.evaluate(()=>{
-   localStorage.setItem("mreo:coordination:role","provider");
-   localStorage.removeItem("mreo:coordination:provider-demo:v2");
- });
+test("direct Coordinate opens an actionable network-level Service Partner inbox",async({page})=>{
+ await page.goto("/index.html");
+ const coordinate=page.getByRole("link",{name:"Coordinate",exact:true});
+ await expect(coordinate).toHaveAttribute("href","coordination.html?role=provider");
+ await coordinate.click();
+ await expect(page).toHaveURL(/coordination\.html\?role=provider/);
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v2"));
  await page.reload();
- await expect(page.locator("#coord-record-title")).toContainText("4218 Maple Ridge Drive");
- await expect(page.locator("#coord-attention-v5 .attention-copy")).toContainText("4218 Maple Ridge Drive");
- await expect(page.locator("#coord-attention-v5 .attention-copy")).not.toContainText("2605 Preston Meadow");
- await expect(page.locator("#provider-queue")).toContainText("4218 Maple Ridge Drive");
- await expect(page.locator("#provider-queue")).not.toContainText("2605 Preston Meadow");
- await expect(page.locator("#provider-queue")).not.toContainText("940 Hickory Grove");
+
+ await expect(page.locator("#coord-view-provider")).toHaveAttribute("aria-pressed","true");
+ await expect(page.locator("#coord-view-buyer")).toBeHidden();
+ await expect(page.locator("#coord-record-title")).toHaveText("Multiple connected property records");
+ await expect(page.locator("#coord-record-status")).toHaveText("Service Partner network inbox");
+ await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
+
+ await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#coord-attention-v5 .attention-copy")).toContainText("2605 Preston Meadow Court");
+ await expect(page.locator("#coord-attention-v5 .attention-title")).toContainText("Review closing profile");
+
+ const rows=page.locator("#provider-queue [data-v5-provider-row]");
+ await expect(rows).toHaveCount(8);
+ await expect(rows.first()).toContainText("Action needed");
+ await expect(rows.first()).toContainText("2605 Preston Meadow Court");
+ await expect(page.locator("#provider-queue")).toContainText("940 Hickory Grove Road");
+ await expect(page.locator("#provider-queue")).toContainText("3921 Travis Street Unit 204");
+ await expect(page.locator("#provider-queue")).toContainText("5016 Meridian Place");
+ await expect(page.locator("#provider-queue")).toContainText("Waiting for seller payoff statement");
 });
