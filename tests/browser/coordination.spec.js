@@ -263,6 +263,12 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
  await page.locator('[data-service="title"]').click();
  await expect.poll(async()=>await page.locator("#service-record-image").getAttribute("src")).toMatch(/^blob:/);
  await expect(page.locator("#service-record-image")).toHaveAttribute("data-primary-media-name","front.png");
+ await page.locator("#service-submit").click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Accept request"}).click();
+ await page.getByRole("link",{name:"Prepare provider response →"}).click();
+ await expect.poll(async()=>await page.locator("#response-record-image").getAttribute("src")).toMatch(/^blob:/);
+ await expect(page.locator("#response-record-image")).toHaveAttribute("data-primary-media-name","front.png");
 });
 
 
