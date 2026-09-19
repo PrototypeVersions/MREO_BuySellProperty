@@ -2,6 +2,7 @@
   "use strict";
 
   const params = new URLSearchParams(location.search);
+  const S = globalThis.MreoService;
   const $ = (id) => document.getElementById(id);
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
   const safeImage = (value) => /^(https?:\/\/|assets\/)/i.test(value || "") ? value : "";
@@ -408,13 +409,10 @@ Property: ${context.label}
     if (changed) renderAll();
   }
 
-  function resetDemo() {
-    if (!confirm("Reset this property's coordination demonstration? Auction and seller/buyer test data outside Coordination will not be changed.")) return;
-    state = defaultState();
-    saveState();
-    selectedFiles = [];
-    renderAll();
-    toast("Coordination demonstration reset.");
+  async function resetDemo() {
+    if (!confirm("Clear all MREO test data in this browser, including buyer/seller accounts, uploaded property media and portfolio data, listings, bids, and Coordination activity?")) return;
+    await S.clear();
+    location.href = "coordination.html";
   }
 
   function fillRecord(prefix) {
