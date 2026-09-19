@@ -697,7 +697,8 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-network-action")).toHaveText("3");
  await expect(page.locator("#coord-network-visual")).toContainText("7 active demonstration jobs");
  await expect(page.locator("#coord-network-visual")).toContainText("3 need provider action");
- await expect(page.locator(".network-property-art-metrics")).toHaveCSS("text-align","right");
+ const viewport=page.viewportSize();
+ await expect(page.locator(".network-property-art-metrics")).toHaveCSS("text-align",viewport&&viewport.width<=620?"left":"right");
  await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
 
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
