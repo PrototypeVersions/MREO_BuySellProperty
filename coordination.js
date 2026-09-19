@@ -192,7 +192,7 @@
 
   function baseDocuments() {
     const price = money(context.price) || "$385,000";
-    const stage = context.stage === "won" ? "Winning bid selected — closing required" : "Acquisition complete";
+    const stage = context.stage === "planning" ? "Participation profile connected — pre-acquisition" : (context.stage === "won" ? "Winning bid selected — closing required" : "Acquisition complete");
     return [
       documentRecord("property-packet", "Connected property information", "Property record", ["buyer","seller","provider"], `MREO DEMONSTRATION — CONNECTED PROPERTY INFORMATION
 
@@ -225,21 +225,25 @@ Property: ${context.label}
 
   function defaultState() {
     const now = Date.now();
+    const planning = context.stage === "planning";
     const pendingClosing = context.stage === "won";
     return {
       version: 3,
       createdAt: now,
       acquisition: {
-        status: pendingClosing ? "pending-closing" : "complete",
+        status: planning ? "planning" : (pendingClosing ? "pending-closing" : "complete"),
         buyer: "Demo Buyer",
         seller: "Demo Seller",
         price: Number(context.price || 385000),
-        completedAt: pendingClosing ? null : now - 86400000,
+        completedAt: planning || pendingClosing ? null : now - 86400000,
         auctionId: context.auction || "demo-property"
       },
       requests: {title:null, contractors:null, realtors:null, rentals:null},
       documents: baseDocuments(),
-      activity: pendingClosing ? [
+      activity: planning ? [
+        {id:"plan-2", at:now - 60000, actor:params.get("accountRole")==="seller"?"Seller":"Buyer", important:true, text:`${params.get("accountName") || (params.get("accountRole")==="seller" ? "Demo Seller" : "Demo Buyer")} opened Coordination from the participation pathway.`},
+        {id:"plan-1", at:now - 120000, actor:"MREO", important:false, text:"Existing Buy / Sell information was carried into the property workspace for planning and later coordination."}
+      ] : pendingClosing ? [
         {id:"acq-2", at:now - 300000, actor:"Auction", important:true, text:`Demo Buyer recorded the winning result at ${money(context.price) || "$385,000"}. Seller acceptance and closing are still required.`},
         {id:"acq-1", at:now - 360000, actor:"MREO", important:false, text:"The winning transaction entered the property workspace so title / settlement can begin."}
       ] : [
@@ -403,7 +407,7 @@ Property: ${context.label}
       else img.hidden = true;
     }
     const badge = $(`${prefix}-status`);
-    if (badge) badge.textContent = context.hasSelection ? (state?.acquisition?.status === "complete" ? "MREO record connected" : "Winning bid · closing required") : "No property selected";
+    if (badge) badge.textContent = context.hasSelection ? (state?.acquisition?.status === "complete" ? "MREO record connected" : state?.acquisition?.status === "planning" ? "Participation record connected" : "Winning bid · closing required") : "No property selected";
   }
 
   function statusClass(status) { return `status-${String(status || "submitted").replace(/[^a-z-]/g, "")}`; }
@@ -412,8 +416,11 @@ Property: ${context.label}
   function completeRequests() { return activeRequests().filter((request) => request.status === "complete"); }
 
   function roleCopy() {
+    const planning = state.acquisition.status === "planning";
     const pending = state.acquisition.status !== "complete";
-    if (role === "seller") return {
+    if (role === "seller") {
+      if (planning) return {eyebrow:"Seller workspace",title:"Your seller information is connected before the transaction begins.",copy:"Review the property record and explore the coordination pathways without re-entering the information you already supplied.",acquisitionEyebrow:"Pre-sale coordination",acquisitionTitle:"Seller profile and property information are connected.",acquisitionCopy:"When the property enters an auction or sale, this same record can continue into title, contractor, realtor, rental, and management workflows."};
+      return {
       eyebrow:"Seller workspace",
       title: pending ? "The auction is over. Closing is the next shared workflow." : "Closing, transfer, and seller handoff in one place.",
       copy: pending ? "Follow seller acceptance, title requirements, payoff or signing requests, and closing without moving the transaction packet between systems." : "Follow the final transfer record and any remaining provider activity from the seller side.",
@@ -421,6 +428,8 @@ Property: ${context.label}
       acquisitionTitle: pending ? "The winning buyer is selected. Closing still needs to be completed." : "The completed transaction remains attached to this property record.",
       acquisitionCopy: pending ? "Start or follow Title / Settlement below. MREO automatically carries the auction and property information into that workflow; only supply information the provider actually needs from you." : "The final transaction information stays connected to the property record and can feed later coordination workflows."
     };
+    }
+    if (planning) return {eyebrow:"Buyer workspace",title:"Your buyer information is connected and ready for future coordination.",copy:"Explore the coordination pathways with the information you already supplied carried forward automatically.",acquisitionEyebrow:"Pre-acquisition coordination",acquisitionTitle:"Buyer participation information is connected.",acquisitionCopy:"When you select or acquire a property, the same buyer profile can flow into title, contractors, realtors, rental, and management workflows without being re-entered."};
     return {
       eyebrow:"Buyer workspace",
       title: pending ? "Your winning bid is selected. Complete the acquisition next." : "Your property record is ready for what comes next.",
@@ -542,8 +551,13 @@ Property: ${context.label}
       $("acquisition-eyebrow").textContent = copy.acquisitionEyebrow;
       $("acquisition-heading").textContent = copy.acquisitionTitle;
       $("acquisition-copy").textContent = copy.acquisitionCopy;
+      const planning = state.acquisition.status === "planning";
       const pending = state.acquisition.status !== "complete";
-      const details = role === "seller" ? [
+      const details = planning ? (role === "seller" ? [
+        ["Seller", state.acquisition.seller], ["Property", context.label], ["Participation status", "Profile connected"], ["Coordination status", "Available for planning"], ["Property record", context.key]
+      ] : [
+        ["Buyer", state.acquisition.buyer], ["Property", context.label], ["Participation status", "Profile connected"], ["Coordination status", "Available for planning"], ["Property record", context.key]
+      ]) : role === "seller" ? [
         ["Seller", state.acquisition.seller], ["Winning buyer", state.acquisition.buyer], ["Winning amount", money(state.acquisition.price)], ["Transaction status", pending ? "Closing required" : "Complete"], ["Transfer status", state.requests.title ? statusLabels[state.requests.title.status] : "Not started"]
       ] : [
         ["Buyer", state.acquisition.buyer], ["Winning / purchase amount", money(state.acquisition.price)], ["Acquisition status", pending ? "Winning bid selected · closing required" : "Complete"], [pending ? "Next required workflow" : "Acquired", pending ? "Title / Settlement" : shortDate(state.acquisition.completedAt)], ["Property record", context.key]
