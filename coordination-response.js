@@ -45,7 +45,7 @@
       ]
     },
     contractors: {
-      eyebrow:"02 · Contractors", shortTitle:"Contractors", title:"Renovation scope & proposal", provider:"Cedar Build & Rehab · demonstration", summary:"Detailed renovation scope, line-item budget, schedule, assumptions, and exclusions.", amount:28400,
+      eyebrow:"02 · Contractors", shortTitle:"Contractors", title:"Renovation scope & proposal", provider:"SummitCraft Contractors · demonstration", summary:"Detailed renovation scope, line-item budget, schedule, assumptions, and exclusions.", amount:28400,
       groups:[
         {title:"Price & schedule",description:"The contractor's proposed commercial terms for the fictional project.",fields:[
           {key:"totalPrice",label:"Total project price",type:"text",default:"$28,400"},
@@ -78,7 +78,7 @@
       ]
     },
     rentals: {
-      eyebrow:"04 · Rent / Manage", shortTitle:"Rental / Property Management", title:"Rental positioning & management proposal", provider:"KeyHouse Property Management · demonstration", summary:"Recommended rent, tenant-placement terms, management fee, maintenance authority, and operating plan.", amount:0,
+      eyebrow:"04 · Rent / Manage", shortTitle:"Rental / Property Management", title:"Rental positioning & management proposal", provider:"HarborKey Property Management · demonstration", summary:"Recommended rent, tenant-placement terms, management fee, maintenance authority, and operating plan.", amount:0,
       groups:[
         {title:"Rental economics & management terms",fields:[
           {key:"recommendedRent",label:"Recommended asking rent",type:"text",default:(request)=>request?.data?.targetRent || "$2,950 per month"},
