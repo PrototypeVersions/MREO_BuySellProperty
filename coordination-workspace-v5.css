@@ -412,6 +412,24 @@ html{scroll-behavior:smooth}
   object-fit:cover;
   object-position:center;
 }
+.network-property-art-footer{
+  padding-top:18px;
+  border-top:1px solid var(--line);
+}
+.network-property-art-footer .network-abstract-label{
+  padding-top:0;
+  border-top:0;
+}
+.network-property-art-metrics{
+  margin:10px 0 0;
+  font-size:15px;
+  line-height:1.45;
+  color:var(--muted);
+}
+.network-property-art-metrics strong{
+  color:var(--ink);
+  font-size:18px;
+}
 @media(max-width:920px){
   .network-property-art-stage{min-height:275px}
   .network-property-art{height:290px}
