@@ -283,7 +283,7 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
 test("streamlined coordination hub uses one attention indicator and clearer service names",async({page})=>{
  const base="/coordination.html?type=property&auction=coord-v5-hub&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229&price=385000";
  await page.goto(base);
- await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-hub");localStorage.removeItem("mreo:coordination:provider-demo:v1");});
+ await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-hub");localStorage.removeItem("mreo:coordination:provider-demo:v2");});
  await page.reload();
  await expect(page.locator('[data-service="contractors"] h2')).toHaveText("Contractors");
  await expect(page.locator('[data-service="realtors"] h2')).toHaveText("Realtors");
@@ -333,7 +333,7 @@ test("selected provider follows a submitted request into the Service Partner vie
 
 test("fictional provider queue jobs require an actual review before completing provider steps",async({page})=>{
  await page.goto("/coordination.html?role=provider&auction=coord-v5-demo-jobs&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229");
- await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-demo-jobs");localStorage.removeItem("mreo:coordination:provider-demo:v1");});
+ await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-demo-jobs");localStorage.removeItem("mreo:coordination:provider-demo:v2");});
  await page.reload();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  const row=page.locator("#provider-queue [data-v5-provider-row]").filter({hasText:"940 Hickory Grove Road"});
@@ -532,7 +532,7 @@ test("every action-needed fictional provider job opens a service-specific review
  ];
  for(const [job,title,field] of cases){
    await page.goto("/coordination-provider-job.html?job="+job+"&role=provider");
-   await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v1"));
+   await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v2"));
    await page.reload();
    await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
    await page.getByRole("button",{name:"Review request packet"}).click();
@@ -546,7 +546,7 @@ test("every action-needed fictional provider job opens a service-specific review
 
 test("provider demo role switch identifies the correct client when the provider is waiting",async({page})=>{
  await page.goto("/coordination-provider-job.html?job=title-maple&role=provider");
- await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v1"));
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v2"));
  await page.reload();
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
  await page.getByRole("button",{name:"Seller",exact:true}).click();
