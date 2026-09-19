@@ -10,7 +10,7 @@
     ],
     contractors: [
       "Match me with a participating provider",
-      "Cedar Build & Rehab · demonstration",
+      "SummitCraft Contractors · demonstration",
       "Atlas Property Services · demonstration",
       "Redstone Restoration · demonstration"
     ],
@@ -22,7 +22,7 @@
     ],
     rentals: [
       "Match me with a participating provider",
-      "KeyHouse Property Management · demonstration",
+      "HarborKey Property Management · demonstration",
       "BlueDoor Residential Management · demonstration",
       "Oakline Property Services · demonstration"
     ]
@@ -78,7 +78,7 @@
       service:"contractors",
       property:"940 Hickory Grove Road, Denton, TX 76209",
       client:"Demo Buyer · Hickory Grove Properties",
-      provider:"Cedar Build & Rehab · demonstration",
+      provider:"SummitCraft Contractors · demonstration",
       actionNeeded:true,
       status:"Prepare rehabilitation estimate",
       summary:"Owner requests a rental-ready rehabilitation estimate covering flooring, paint, exterior trim, HVAC service, and final cleanup.",
@@ -166,7 +166,7 @@
       service:"rentals",
       property:"5016 Meridian Place, Addison, TX 75001",
       client:"Demo Owner · Meridian Residential",
-      provider:"KeyHouse Property Management · demonstration",
+      provider:"HarborKey Property Management · demonstration",
       actionNeeded:true,
       status:"Review rent-ready packet",
       summary:"Owner requests tenant placement plus ongoing management. The property record includes acquisition details and contractor closeout information.",
