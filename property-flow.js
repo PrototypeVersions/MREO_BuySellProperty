@@ -32,6 +32,7 @@
       const chosen = photos[0];
       imageEl.src = URL.createObjectURL(chosen.blob);
       imageEl.alt = "Seller-provided property photograph";
+      imageEl.dataset.primaryMediaName = chosen.name || "";
     } catch {}
   }
 
@@ -174,6 +175,7 @@
       hero = photos[0];
       main.src = URL.createObjectURL(hero.blob);
       main.alt = "Seller-provided property photograph for " + address;
+      main.dataset.primaryMediaName = hero.name || "";
       main.closest(".single-property-media").hidden = false;
     }
 
