@@ -678,8 +678,16 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
 
  await expect(page.locator("#coord-view-provider")).toHaveAttribute("aria-pressed","true");
  await expect(page.locator("#coord-view-buyer")).toBeHidden();
- await expect(page.locator("#coord-record-title")).toHaveText("Multiple connected property records");
- await expect(page.locator("#coord-record-status")).toHaveText("Service Partner network inbox");
+ await expect(page.locator("#coord-network-visual")).toBeVisible();
+ await expect(page.locator("#coord-property-record-content")).toBeHidden();
+ await expect(page.locator("#coord-network-visual .record-eyebrow")).toHaveText("Connected property network");
+ await expect(page.locator("#coord-network-visual .network-inbox-label")).toHaveText("Service Partner network inbox");
+ await expect(page.locator("#coord-network-active")).toHaveText("7");
+ await expect(page.locator("#coord-network-action")).toHaveText("3");
+ await expect(page.locator("#coord-network-visual")).toContainText("active jobs");
+ await expect(page.locator("#coord-network-visual")).not.toContainText("active demonstration jobs");
+ await expect(page.locator(".network-property-card")).toHaveCount(4);
+ await expect(page.locator(".network-property-card")).toContainText(["2605 Preston Meadow","940 Hickory Grove","3921 Travis Street","4218 Maple Ridge"]);
  await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
 
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
