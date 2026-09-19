@@ -688,14 +688,16 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-network-visual")).toBeVisible();
  await expect(page.locator("#coord-property-record-content")).toBeHidden();
  await expect(page.locator("#coord-network-visual .record-eyebrow")).toHaveText("Connected property network");
- await expect(page.locator("#coord-network-illustration")).toBeVisible();
- await expect(page.locator("#coord-network-illustration")).toHaveAttribute("src","assets/coordination-property-network.svg");
+ const artwork=page.locator("#coord-network-illustration");
+ await expect(artwork).toBeVisible();
+ await expect(artwork).toHaveAttribute("src",/coordination-property-network\.svg\?v=20260919-portfolio-collage-v20/);
+ await expect(artwork).toHaveAttribute("alt","Portfolio-style collage of connected residential properties");
  await expect(page.locator(".network-abstract-svg")).toHaveCount(0);
- await expect(page.locator("#coord-network-visual .network-abstract-label")).toHaveCSS("font-size","19px");
  await expect(page.locator("#coord-network-active")).toHaveText("7");
  await expect(page.locator("#coord-network-action")).toHaveText("3");
  await expect(page.locator("#coord-network-visual")).toContainText("7 active demonstration jobs");
  await expect(page.locator("#coord-network-visual")).toContainText("3 need provider action");
+ await expect(page.locator(".network-property-art-metrics")).toHaveCSS("text-align","right");
  await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
 
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
