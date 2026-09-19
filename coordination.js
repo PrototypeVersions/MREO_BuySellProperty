@@ -623,10 +623,15 @@ Property: ${context.label}
   function renderProviderHub() {
     const specialty = $("provider-specialty")?.value || "all";
     const entries = Object.entries(state.requests).filter(([key, request]) => request && (specialty === "all" || specialty === key));
+    const activeEntries = entries.filter(([, request]) => request.status !== "complete");
     const queue = $("provider-queue");
     if (queue) {
-      if (!entries.length) queue.innerHTML = '<div class="provider-empty-queue"><strong>No incoming requests yet.</strong><p>Switch to Buyer or Seller, open any coordination pathway, and submit it. The exact request will then appear in this provider queue.</p></div>';
-      else queue.innerHTML = entries.map(([key, request]) => {
+      if (!activeEntries.length) {
+        const hasCompleted = entries.some(([,request]) => request.status === "complete");
+        queue.innerHTML = hasCompleted
+          ? '<div class="provider-empty-queue"><strong>No active requests.</strong><p>Completed work is shown separately under Completed requests.</p></div>'
+          : '<div class="provider-empty-queue"><strong>No incoming requests yet.</strong><p>Switch to Buyer or Seller, open any coordination pathway, and submit it. The exact request will then appear in this provider queue.</p></div>';
+      } else queue.innerHTML = activeEntries.map(([key, request]) => {
         const config = services[key];
         const attachments = request.attachments?.length || 0;
         return `<article class="provider-job">
@@ -641,7 +646,7 @@ Property: ${context.label}
       }).join("");
     }
     const requests = entries.map(([,request]) => request);
-    if ($("provider-inbox-count")) $("provider-inbox-count").textContent = String(requests.filter((r) => r.status !== "complete").length);
+    if ($("provider-inbox-count")) $("provider-inbox-count").textContent = String(activeEntries.length);
     if ($("provider-waiting-count")) $("provider-waiting-count").textContent = String(requests.filter((r) => ["needs-info","proposal"].includes(r.status)).length);
     if ($("provider-complete-count")) $("provider-complete-count").textContent = String(requests.filter((r) => r.status === "complete").length);
     renderDocumentLibrary($("provider-document-library"), "provider");
