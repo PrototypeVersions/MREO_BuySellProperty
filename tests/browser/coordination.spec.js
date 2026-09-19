@@ -221,7 +221,8 @@ test("seller-created property listings are routed through the detail page",async
  await expect(page.locator("#property-detail-price")).toHaveText("$101,000");
  const interest=page.getByRole("link",{name:"Prepare Interest"});
  await expect(interest).toHaveAttribute("href",/auction=seller-created-test/);
- await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Coordinate This Property"})).toHaveCount(0);
+ await expect(page.getByRole("heading",{name:"Prepare buyer interest",exact:true})).toBeVisible();
 });
 
 test("seller-created listing uses one fixed hero, remaining images, and videos",async({page})=>{
@@ -254,8 +255,17 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
  await expect(page.locator("#property-video-gallery")).toContainText("walkthrough.mp4");
  const interest=page.getByRole("link",{name:"Prepare Interest"});
  expect(new URL(await interest.getAttribute("href"),page.url()).searchParams.get("auction")).toBe(created.auctionId);
+ await expect(page.getByRole("link",{name:"Coordinate This Property"})).toHaveCount(0);
 
- await page.getByRole("link",{name:"Coordinate This Property"}).click();
+ await interest.click();
+ await page.locator("#buyer-name").fill("Media Property Buyer");
+ await page.locator("#buyer-email").fill("media-property-buyer@example.com");
+ await page.locator("#buyer-confirmation").check();
+ await page.getByRole("button",{name:"Submit Buyer Interest",exact:true}).click();
+ await expect(page).toHaveURL(/payment\.html\?role=buyer$/);
+ await expect(page.getByRole("link",{name:"Coordinate →"})).toBeVisible();
+ await page.getByRole("link",{name:"Coordinate →"}).click();
+ await expect(page).toHaveURL(/coordination\.html\?/);
  await expect.poll(async()=>await page.locator("#coord-record-image").getAttribute("src")).toMatch(/^blob:/);
  await expect(page.locator("#coord-record-image")).toHaveAttribute("data-primary-media-name","front.png");
  await page.locator('[data-service="title"]').click();
