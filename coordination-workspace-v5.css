@@ -140,3 +140,44 @@ html{scroll-behavior:smooth}
   .provider-job-detail-grid{grid-template-columns:1fr}
   .provider-job-field{grid-template-columns:1fr;gap:4px}
 }
+
+/* Provider branding */
+.provider-logo-stage{
+  min-height:180px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px 14px 24px;
+  margin:-4px 0 22px;
+  border-bottom:1px solid var(--line);
+}
+.provider-brand-logo{
+  display:block;
+  width:min(100%,420px);
+  max-height:170px;
+  object-fit:contain;
+}
+.provider-company-badge{
+  min-width:210px;
+}
+.provider-company-logo{
+  display:block;
+  width:150px;
+  height:54px;
+  object-fit:contain;
+  object-position:center;
+  margin:0 0 10px auto;
+}
+.response-provider-context .response-provider-logo{
+  display:block;
+  width:150px;
+  height:48px;
+  object-fit:contain;
+  object-position:left center;
+  margin:0 0 8px;
+}
+@media(max-width:820px){
+  .provider-logo-stage{min-height:130px}
+  .provider-brand-logo{max-height:125px}
+  .provider-company-logo{margin-left:0}
+}
