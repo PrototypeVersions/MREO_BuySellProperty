@@ -107,6 +107,21 @@
     if(!saved)return job;
     return {...job,...saved};
   }
+  function propertyIdentity(value){
+    return String(value||"").split(",")[0].trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  }
+  function demoJobsForCurrentProperty(){
+    const identity=propertyIdentity(contextLabel);
+    if(!identity)return [];
+    return demoJobs.map(currentDemoJob).filter(job=>propertyIdentity(job.property)===identity);
+  }
+  function providerJobHref(job){
+    const out=new URLSearchParams();
+    out.set("job",job.id);
+    out.set("role","provider");
+    out.set("return",location.pathname.split("/").pop()+"?"+location.search.replace(/^\?/,""));
+    return `coordination-provider-job.html?${out.toString()}`;
+  }
 
   async function profileFor(currentRole){
     if(currentRole==="provider")return null;
@@ -264,14 +279,17 @@
       const item=providerActionForRequest(key,request);
       if(item?.on)return item;
     }
-    const demo=demoJobs.map(currentDemoJob).find(job=>job.actionNeeded);
-    if(demo)return {on:true,title:demo.status+".",copy:`${demo.property} · ${demo.summary}`,href:`coordination-provider-job.html?job=${encodeURIComponent(demo.id)}`,link:"Open provider job →"};
+    const scopedDemoJobs=demoJobsForCurrentProperty();
+    const demo=scopedDemoJobs.find(job=>job.actionNeeded);
+    if(demo)return {on:true,title:demo.status+".",copy:`${demo.property} · ${demo.summary}`,href:providerJobHref(demo),link:"Open provider job →"};
     for(const [key,request] of Object.entries(state?.requests||{})){
       if(!request)continue;
       const item=providerActionForRequest(key,request);
       if(item)return item;
     }
-    return {on:false,title:"Waiting for new provider work.",copy:"There is nothing in the provider queue that currently requires action.",href:"#provider-queue-title",link:"View work queue ↓"};
+    const scopedWaiting=scopedDemoJobs.find(job=>!job.complete);
+    if(scopedWaiting)return {on:false,title:scopedWaiting.status+".",copy:`${scopedWaiting.property} · ${scopedWaiting.summary}`,href:providerJobHref(scopedWaiting),link:"View provider job →"};
+    return {on:false,title:"Waiting for new provider work.",copy:`There is nothing attached to ${contextLabel} that currently requires provider action.`,href:"#provider-queue-title",link:"View work queue ↓"};
   }
 
   function ensureHubAttention(){
@@ -458,12 +476,12 @@
     if(!queue)return;
     const state=loadState();
     const actual=actualProviderRows(state,specialty);
-    const examples=demoJobs.map(currentDemoJob).filter(job=>specialty==="all"||specialty===job.service).map(job=>({
+    const examples=demoJobsForCurrentProperty().filter(job=>specialty==="all"||specialty===job.service).map(job=>({
       ...job,
       stateLabel:job.complete?"Complete":job.actionNeeded?"Action needed":"Waiting",
       complete:!!job.complete,
       label:serviceLabels[job.service]?.title||job.service,
-      href:`coordination-provider-job.html?job=${encodeURIComponent(job.id)}&role=provider`
+      href:providerJobHref(job)
     }));
     const rows=[...actual,...examples];
     const activeRows=rows.filter(row=>!row.complete);
@@ -508,7 +526,7 @@
     const heading=$("provider-queue-title");
     setTextIfChanged(heading,"Provider work queue");
     const intro=$("provider-inbox-heading")?.nextElementSibling;
-    setTextIfChanged(intro,"Live requests from Buyer or Seller appear alongside fictional provider jobs so every service pathway can be explored immediately.");
+    setTextIfChanged(intro,`Live requests and fictional demonstration work shown here are scoped to ${contextLabel}, so every provider item stays attached to the shared property record above.`);
   }
 
   function hideDeprecatedAreas(){
