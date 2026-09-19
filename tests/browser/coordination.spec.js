@@ -423,3 +423,72 @@ test("completed provider work is separated from the active queue and labeled Com
  await expect(completed).toContainText("This request is complete.");
  await expect(completed.getByRole("link",{name:"View completed request →"})).toBeVisible();
 });
+
+
+test("payment Coordinate carries Buyer and Seller profiles into pre-acquisition Coordination",async({page})=>{
+ await page.goto("/seller.html");
+ await page.evaluate(async()=>{
+   await MreoService.register("seller",
+     {name:"Connected Seller LLC",email:"seller-connected@example.com"},
+     {title:"88 Connected Seller Way, Dallas, TX 75201",kind:"property",minimum:455000,days:1,portfolio:[],details:{sellerPhone:"214-555-0188",saleTimeline:"30 days"}}
+   );
+ });
+ await page.goto("/payment.html?role=seller");
+ const sellerCoordinate=page.locator("#payment-coordinate");
+ await expect(sellerCoordinate).toBeVisible();
+ const sellerHref=new URL(await sellerCoordinate.getAttribute("href"),page.url());
+ expect(sellerHref.searchParams.get("role")).toBe("seller");
+ expect(sellerHref.searchParams.get("accountRole")).toBe("seller");
+ expect(sellerHref.searchParams.get("accountName")).toBe("Connected Seller LLC");
+ expect(sellerHref.searchParams.get("stage")).toBe("planning");
+ expect(sellerHref.searchParams.get("address")).toBe("88 Connected Seller Way, Dallas, TX 75201");
+ expect(sellerHref.searchParams.get("mediaKey")).toBeTruthy();
+ await sellerCoordinate.click();
+ await expect(page.locator("#role-workspace-title")).toContainText("seller information is connected");
+ await expect(page.locator("#coord-record-status")).toHaveText("Participation record connected");
+ await page.locator('[data-service="title"]').click();
+ await expect(page.locator('input[name="clientAccountName"]')).toHaveValue("Connected Seller LLC");
+
+ await page.goto("/buyer.html");
+ await page.evaluate(async()=>{
+   await MreoService.register("buyer",
+     {name:"Connected Buyer LLC",email:"buyer-connected@example.com"},
+     {title:"99 Connected Buyer Road, Plano, TX 75093",auctionId:"",proposedOffer:"625000",details:{buyerPhone:"972-555-0199",buyerPurchaseMethod:"Cash",buyerTimeline:"Immediately"}}
+   );
+ });
+ await page.goto("/payment.html?role=buyer");
+ const buyerCoordinate=page.locator("#payment-coordinate");
+ await expect(buyerCoordinate).toBeVisible();
+ const buyerHref=new URL(await buyerCoordinate.getAttribute("href"),page.url());
+ expect(buyerHref.searchParams.get("role")).toBe("buyer");
+ expect(buyerHref.searchParams.get("accountRole")).toBe("buyer");
+ expect(buyerHref.searchParams.get("accountName")).toBe("Connected Buyer LLC");
+ expect(buyerHref.searchParams.get("stage")).toBe("planning");
+ expect(buyerHref.searchParams.get("purchaseMethod")).toBe("Cash");
+ await buyerCoordinate.click();
+ await expect(page.locator("#role-workspace-title")).toContainText("buyer information is connected");
+ await expect(page.locator("#coord-record-status")).toHaveText("Participation record connected");
+ await page.locator('[data-service="title"]').click();
+ await expect(page.locator('input[name="clientAccountName"]')).toHaveValue("Connected Buyer LLC");
+ await expect(page.locator('select[name="funding"]')).toHaveValue("Cash purchase");
+});
+
+test("branded fictional providers display their unique logos in provider work items",async({page})=>{
+ const cases=[
+   ["title-preston","northstar-title-settlement.png"],
+   ["title-maple","meridian-closing-services.png"],
+   ["contractor-hickory","summitcraft-contractors.png"],
+   ["realtor-travis","metroline-realty-group.png"],
+   ["rental-meridian","harborkey-property-management.png"]
+ ];
+ for(const [job,file] of cases){
+   await page.goto("/coordination-provider-job.html?job="+job);
+   const logo=page.locator("#provider-job-logo");
+   await expect(logo).toBeVisible();
+   await expect(logo).toHaveAttribute("src",new RegExp(file.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&")+"$"));
+   await expect(logo.locator("xpath=..")).toBeVisible();
+ }
+ await page.goto("/coordination-provider-job.html?job=contractor-brookfield");
+ await expect(page.locator("#provider-job-logo")).toBeHidden();
+ await expect(page.locator(".provider-logo-stage")).toBeHidden();
+});
