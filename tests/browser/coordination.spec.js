@@ -481,7 +481,7 @@ test("completed provider work is separated from the active queue and labeled Com
 });
 
 
-test("payment Coordinate carries Buyer and Seller profiles into pre-acquisition Coordination",async({page})=>{
+test("payment Coordinate remains on Seller pathway and is removed from Buyer pathway",async({page})=>{
  await page.goto("/seller.html");
  await page.evaluate(async()=>{
    await MreoService.register("seller",
@@ -517,21 +517,10 @@ test("payment Coordinate carries Buyer and Seller profiles into pre-acquisition 
    );
  });
  await page.goto("/payment.html?role=buyer");
- const buyerCoordinate=page.locator("#payment-coordinate");
- await expect(buyerCoordinate).toBeVisible();
- const buyerHref=new URL(await buyerCoordinate.getAttribute("href"),page.url());
- expect(buyerHref.searchParams.get("role")).toBe("buyer");
- expect(buyerHref.searchParams.get("accountRole")).toBe("buyer");
- expect(buyerHref.searchParams.get("accountName")).toBe("Connected Buyer LLC");
- expect(buyerHref.searchParams.get("stage")).toBe("planning");
- expect(buyerHref.searchParams.get("purchaseMethod")).toBe("Cash");
- await page.locator("#payment-consent").check();
- await buyerCoordinate.click();
- await expect(page.locator("#role-workspace-title")).toContainText("buyer information is connected");
- await expect(page.locator("#coord-record-status")).toHaveText("Participation record connected");
- await page.locator('[data-service="title"]').click();
- await expect(page.locator('input[name="clientAccountName"]')).toHaveValue("Connected Buyer LLC");
- await expect(page.locator('select[name="funding"]')).toHaveValue("Cash purchase");
+ await expect(page.locator("#payment-coordinate-actions")).toBeHidden();
+ await expect(page.locator("#payment-coordinate-note")).toBeHidden();
+ await expect(page.getByRole("link",{name:"Coordinate →"})).toHaveCount(0);
+ await expect(page.locator("#payment-submit")).toHaveText("Auction →");
 });
 
 test("branded fictional providers display their unique logos in provider work items",async({page})=>{
