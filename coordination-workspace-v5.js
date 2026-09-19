@@ -132,14 +132,15 @@
       const details=account?.submission?.details||{};
       const isBuyer=currentRole==="buyer";
       const useQuery=!queryProfile.role||queryProfile.role===currentRole;
-      const merged={
-        name:(useQuery?queryProfile.name:"")||account?.name||(isBuyer?"Demo Buyer":"Demo Seller"),
-        email:(useQuery?queryProfile.email:"")||account?.email||"",
-        phone:(useQuery?queryProfile.phone:"")||details[isBuyer?"buyerPhone":"sellerPhone"]||"",
-        purchaseMethod:(useQuery?queryProfile.purchaseMethod:"")||details.buyerPurchaseMethod||"",
-        timeline:(useQuery?queryProfile.timeline:"")||details[isBuyer?"buyerTimeline":"saleTimeline"]||""
-      };
       const state=loadState();
+      const storedProfile=isBuyer?state?.acquisition?.buyerProfile:state?.acquisition?.sellerProfile;
+      const merged={
+        name:(useQuery?queryProfile.name:"")||account?.name||storedProfile?.name||state?.acquisition?.[isBuyer?"buyer":"seller"]||(isBuyer?"Demo Buyer":"Demo Seller"),
+        email:(useQuery?queryProfile.email:"")||account?.email||storedProfile?.email||"",
+        phone:(useQuery?queryProfile.phone:"")||details[isBuyer?"buyerPhone":"sellerPhone"]||storedProfile?.phone||"",
+        purchaseMethod:(useQuery?queryProfile.purchaseMethod:"")||details.buyerPurchaseMethod||storedProfile?.purchaseMethod||"",
+        timeline:(useQuery?queryProfile.timeline:"")||details[isBuyer?"buyerTimeline":"saleTimeline"]||storedProfile?.timeline||""
+      };
       if(state?.acquisition&&merged.name){
         const key=isBuyer?"buyer":"seller";
         if(state.acquisition[key]!==merged.name){state.acquisition[key]=merged.name;saveState(state);}
