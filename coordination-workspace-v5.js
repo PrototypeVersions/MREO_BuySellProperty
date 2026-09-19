@@ -206,11 +206,29 @@
         if(isOwner)return {on:true,title:`Provide information for ${label}.`,copy:"The service provider needs additional information before it can continue.",href:serviceHref(key,currentRole),link:"Open request →"};
         return {on:false,title:`Waiting for ${request.ownerRole==="seller"?"seller":"buyer"} information.`,copy:"The provider requested additional information from the client who submitted this request.",href:serviceHref(key,currentRole),link:"View request →"};
       }
-      if(key==="title"&&request.status==="in-progress"&&isOwner&&!request.clientClosingConfirmed)return {on:true,title:"Confirm the closing / signing step.",copy:"The settlement provider is waiting for the client who submitted this request to confirm that the required signing step is complete.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
+      if(key==="title"&&request.status==="counterparty-action"){
+        const counterparty=request.counterpartyRole||(request.ownerRole==="seller"?"buyer":"seller");
+        if(currentRole===counterparty)return {on:true,title:counterparty==="seller"?"Confirm seller title / payoff information.":"Confirm buyer closing information.",copy:"The initiating client approved the title response. Confirm the remaining transaction-party information so the provider can prepare closing.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
+        return {on:false,title:`Waiting for ${counterparty} title information.`,copy:`The title response is approved. The ${counterparty} must confirm the remaining title / closing information before the provider can continue.`,href:serviceHref(key,currentRole),link:"View request →"};
+      }
+      if(key==="title"&&request.status==="in-progress"){
+        const buyerSigned=!!(request.buyerClosingConfirmed||(request.ownerRole==="buyer"&&request.clientClosingConfirmed));
+        const sellerSigned=!!(request.sellerClosingConfirmed||(request.ownerRole==="seller"&&request.clientClosingConfirmed));
+        if(!buyerSigned){
+          if(currentRole==="buyer")return {on:true,title:"Confirm buyer closing / signing.",copy:"The settlement provider is waiting for the buyer-side signing confirmation.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
+          return {on:false,title:"Waiting for buyer closing confirmation.",copy:"Buyer-side signing must be confirmed before the title workflow can move to the seller closing step.",href:serviceHref(key,currentRole),link:"View request →"};
+        }
+        if(!sellerSigned){
+          if(currentRole==="seller")return {on:true,title:"Confirm seller closing / signing.",copy:"Buyer signing is complete. The settlement provider is waiting for seller-side signing and payoff confirmation.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
+          return {on:false,title:"Waiting for seller closing confirmation.",copy:"Buyer signing is confirmed. The seller must now complete the seller-side closing step.",href:serviceHref(key,currentRole),link:"View request →"};
+        }
+        return {on:false,title:"Waiting for the title provider to finalize transfer.",copy:"Buyer and seller closing confirmations are complete. The title / settlement provider can now publish the final closing record.",href:serviceHref(key,currentRole),link:"View request →"};
+      }
       if(request.status==="submitted")return {on:false,title:`Waiting for a ${label.toLowerCase()} provider.`,copy:"The request has been submitted. MREO is waiting for a participating provider to accept it.",href:serviceHref(key,currentRole),link:"View request →"};
       if(request.status==="matched")return {on:false,title:`${label} is under provider review.`,copy:request.revisionRequest?"The client requested changes and the participating provider is revising the response.":"The participating provider is reviewing the connected property record and request.",href:serviceHref(key,currentRole),link:"View request →"};
       if(request.status==="approved"||request.status==="in-progress")return {on:false,title:`Waiting on the ${label.toLowerCase()} provider.`,copy:"The client-side step is complete. The participating provider is now responsible for the next workflow action.",href:serviceHref(key,currentRole),link:"View request →"};
     }
+    if(state?.acquisition?.status==="planning")return {on:true,title:"Choose what you want to coordinate.",copy:"Your Buyer or Seller participation information is already connected. Explore any service pathway without re-entering that profile.",href:"#coordination-pathways",link:"See service paths ↓"};
     if(state?.acquisition?.status!=="complete")return {on:true,title:"Choose the next closing step.",copy:"The winning transaction is recorded, but closing is still required. Title / Settlement is the recommended next pathway.",href:"#coordination-pathways",link:"See service paths ↓"};
     return {on:true,title:"Choose what this property needs next.",copy:"There is no active request waiting on someone else. Select one of the four coordination pathways below.",href:"#coordination-pathways",link:"See service paths ↓"};
   }
@@ -219,9 +237,19 @@
     const label=serviceLabels[key]?.title||key;
     if(request.status==="submitted")return {on:true,title:`Review incoming ${label.toLowerCase()} request.`,copy:"Check the client answers and connected property information, then accept the request or ask for more information.",href:serviceHref(key,"provider"),link:"Open request →"};
     if(request.status==="matched")return {on:true,title:`Prepare the ${label.toLowerCase()} provider response.`,copy:"The request has been accepted. Prepare the detailed response the client will review.",href:responseHref(key,"provider"),link:"Prepare response →"};
-    if(request.status==="approved")return {on:true,title:`Start the approved ${label.toLowerCase()} service.`,copy:"The client approved the provider response. Scheduling or work can now begin.",href:serviceHref(key,"provider"),link:"Open request →"};
+    if(request.status==="counterparty-action"){
+      const counterparty=request.counterpartyRole||(request.ownerRole==="seller"?"buyer":"seller");
+      return {on:false,title:`Waiting for ${counterparty} title information.`,copy:`The initiating client approved the title response. The ${counterparty} must confirm the remaining title / closing information before provider work continues.`,href:serviceHref(key,"provider"),link:"View request →"};
+    }
+    if(request.status==="approved")return {on:true,title:`Start the approved ${label.toLowerCase()} service.`,copy:"The required client-side information is confirmed. Scheduling or work can now begin.",href:serviceHref(key,"provider"),link:"Open request →"};
     if(request.status==="in-progress"){
-      if(key==="title"&&!request.clientClosingConfirmed)return {on:false,title:"Waiting for buyer closing confirmation.",copy:"The title file is in progress, but the provider is waiting for the buyer to complete the signing confirmation.",href:serviceHref(key,"provider"),link:"View request →"};
+      if(key==="title"){
+        const buyerSigned=!!(request.buyerClosingConfirmed||(request.ownerRole==="buyer"&&request.clientClosingConfirmed));
+        const sellerSigned=!!(request.sellerClosingConfirmed||(request.ownerRole==="seller"&&request.clientClosingConfirmed));
+        if(!buyerSigned)return {on:false,title:"Waiting for buyer closing confirmation.",copy:"The title file is in progress, but the provider is waiting for buyer-side signing confirmation.",href:serviceHref(key,"provider"),link:"View request →"};
+        if(!sellerSigned)return {on:false,title:"Waiting for seller closing confirmation.",copy:"Buyer signing is confirmed. The provider is waiting for seller-side signing and payoff confirmation.",href:serviceHref(key,"provider"),link:"View request →"};
+        return {on:true,title:"Finalize the title transfer.",copy:"Buyer and seller closing steps are confirmed. Finalize transfer and publish the closing record.",href:serviceHref(key,"provider"),link:"Open request →"};
+      }
       return {on:true,title:`Update the ${label.toLowerCase()} job.`,copy:"Work is in progress. Review the file and complete or update the next provider step.",href:serviceHref(key,"provider"),link:"Open request →"};
     }
     if(request.status==="needs-info")return {on:false,title:"Waiting for client information.",copy:"The provider requested information and is waiting for the buyer or seller to respond.",href:serviceHref(key,"provider"),link:"View request →"};
