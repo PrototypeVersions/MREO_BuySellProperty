@@ -34,6 +34,7 @@
     $("provider-job-property").textContent=data.property;
     $("provider-job-summary").textContent=data.summary;
     $("provider-job-company").textContent=data.provider;
+    globalThis.MREO_PROVIDER_BRANDING?.apply($("provider-job-logo"),data.provider);
     $("provider-job-client").textContent=data.client;
     $("provider-job-status").textContent=data.status;
     $("provider-job-fields").innerHTML=(data.details||[]).map(([label,value])=>`<div class="provider-job-field"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
