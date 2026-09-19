@@ -228,7 +228,7 @@
     setFact("property-detail-condition", params.get("condition") || params.get("type"));
 
     const buyer = new URLSearchParams();
-    ["auction", "address", "price"].forEach((key) => {
+    ["auction", "address", "price", "mediaKey", "image"].forEach((key) => {
       const value = params.get(key);
       if (value) buyer.set(key, value);
     });
