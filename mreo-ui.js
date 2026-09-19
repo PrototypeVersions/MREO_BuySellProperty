@@ -106,7 +106,7 @@ async function submitSeller(){
 async function submitBuyer(){
  await readyPromise;
  const form=$("buyer-form");if(!form.reportValidity())return;
- await S.register("buyer",{name:field("buyer-name"),email:field("buyer-email")},{title:field("buyer-offer-address"),auctionId:params.get("auction")||"",proposedOffer:field("buyer-offer-amount"),details:Object.fromEntries([...new FormData(form)].filter(([,v])=>typeof v==="string"))});
+ await S.register("buyer",{name:field("buyer-name"),email:field("buyer-email")},{title:field("buyer-offer-address"),auctionId:params.get("auction")||"",mediaKey:params.get("mediaKey")||"",image:params.get("image")||"",proposedOffer:field("buyer-offer-amount"),details:Object.fromEntries([...new FormData(form)].filter(([,v])=>typeof v==="string"))});
  location.href="payment.html?role=buyer";
 }
 async function payment(){
@@ -123,7 +123,7 @@ async function payment(){
   if(submission.auctionId)q.set("auction",submission.auctionId);
   const price=role==="seller"?submission.minimum:submission.proposedOffer;
   if(price)q.set("price",String(price));
-  if(role==="seller"&&submission.draftId)q.set("mediaKey",submission.draftId);
+  const mediaKey=role==="seller"?submission.draftId:submission.mediaKey;if(mediaKey)q.set("mediaKey",mediaKey);if(submission.image)q.set("image",submission.image);
   const phone=details[role==="seller"?"sellerPhone":"buyerPhone"];
   const timeline=details[role==="seller"?"saleTimeline":"buyerTimeline"];
   if(phone)q.set("accountPhone",phone);
