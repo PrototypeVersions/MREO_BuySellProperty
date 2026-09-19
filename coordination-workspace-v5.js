@@ -55,6 +55,7 @@
         const photo=media.find(item=>(item.type||"").startsWith("image/")&&item.blob);
         if(photo){
           primaryImageUrl=URL.createObjectURL(photo.blob);
+          ["coord-record-image","service-record-image"].forEach(id=>{const img=$(id);if(img)img.dataset.primaryMediaName=photo.name||"";});
           applyPrimaryPropertyImage(primaryImageUrl);
           return;
         }
