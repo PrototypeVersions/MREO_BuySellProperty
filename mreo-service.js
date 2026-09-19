@@ -17,7 +17,23 @@ function demoAccount(state,auction,role,actor){
  const id=actor==="test-seller"?auction.sellerId:actor||session(role)?.id;
  return state.accounts[id]||null;
 }
-function clear(){localStorage.removeItem(key);for(const role of ["buyer","seller"])sessionStorage.removeItem(sessionKey(role));}
+async function clear(){
+ localStorage.removeItem(key);
+ for(let i=localStorage.length-1;i>=0;i--){
+  const storageKey=localStorage.key(i);
+  if(storageKey?.startsWith("mreo:coordination:"))localStorage.removeItem(storageKey);
+ }
+ for(const role of ["buyer","seller"])sessionStorage.removeItem(sessionKey(role));
+ sessionStorage.removeItem(key+":role");
+ if(globalThis.indexedDB){
+  await new Promise(resolve=>{
+   const request=indexedDB.deleteDatabase(mediaDbName);
+   request.onsuccess=()=>resolve();
+   request.onerror=()=>resolve();
+   request.onblocked=()=>resolve();
+  });
+ }
+}
 const uid=prefix=>prefix+"-"+crypto.randomUUID();
 const mediaDbName="mreo-media-v1:"+root;
 function openMediaDb(){
