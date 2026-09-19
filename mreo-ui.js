@@ -113,10 +113,27 @@ async function payment(){
  if(!$("payment-submit"))return;
  const role=params.get("role")==="seller"?"seller":"buyer";S.setRole(role);$("payment-role").textContent=role==="seller"?"Seller":"Buyer";$("payment-back").href=role+".html";
  if(S.demo){$("payment-intro").textContent="Try the complete participation flow with a $1 test credit."; $("payment-explanation").textContent="This test step does not charge money or collect payment credentials. The connected version uses Stripe checkout to collect $1 and save your payment method."; $("payment-consent-label").textContent="I understand this adds a $1 test credit. No money is charged and no card is saved.";}
- const button=$("payment-submit");
+ const button=$("payment-submit"),coordinate=$("payment-coordinate");
+ function coordinateHref(account){
+  const q=new URLSearchParams({role,accountRole:role,stage:"planning"});
+  if(account?.name)q.set("accountName",account.name);
+  if(account?.email)q.set("accountEmail",account.email);
+  const submission=account?.submission||{},details=submission.details||{};
+  if(submission.title)q.set("address",submission.title);
+  if(submission.auctionId)q.set("auction",submission.auctionId);
+  const price=role==="seller"?submission.minimum:submission.proposedOffer;
+  if(price)q.set("price",String(price));
+  if(role==="seller"&&submission.draftId)q.set("mediaKey",submission.draftId);
+  const phone=details[role==="seller"?"sellerPhone":"buyerPhone"];
+  const timeline=details[role==="seller"?"saleTimeline":"buyerTimeline"];
+  if(phone)q.set("accountPhone",phone);
+  if(details.buyerPurchaseMethod)q.set("purchaseMethod",details.buyerPurchaseMethod);
+  if(timeline)q.set("purchaseTimeline",timeline);
+  return "coordination.html?"+q.toString();
+ }
  async function refresh(){
  const a=await S.me(role);if(!a){message("payment-message","Submit your "+role+" information before completing participation.",true);button.disabled=true;button.textContent="Submit your information first";return null;}
- $("payment-account").textContent=a.name;$("payment-credit").textContent="$"+(Number(a.creditCents||0)/100).toFixed(2)+(S.demo?" test":"");
+ $("payment-account").textContent=a.name;$("payment-credit").textContent="$"+(Number(a.creditCents||0)/100).toFixed(2)+(S.demo?" test":"");if(coordinate)coordinate.href=coordinateHref(a);
  const paid=a.creditCents>=100;$("payment-consent-row").hidden=paid;button.disabled=false;button.textContent=paid?"Continue to auction →":S.demo?"Complete $1 test step":"Pay $1 securely with Stripe";return a;
  }
  let a=await refresh();
