@@ -68,6 +68,7 @@ test("Fort Worth auction carries the winning buyer profile and property image in
  await expect(page.locator("#coord-record-image")).toHaveAttribute("src",image);
  await page.goto("/payment.html?role=buyer");
  await expect(page).toHaveURL(/payment\.html\?role=buyer$/);
+ await page.locator("#payment-consent").check();
 
  await page.locator("#payment-submit").click();
  await expect(page).toHaveURL(/auction\.html\?id=demo-fort-worth&view=buyer$/);
