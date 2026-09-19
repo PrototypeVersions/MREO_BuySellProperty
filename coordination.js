@@ -709,6 +709,7 @@ Property: ${context.label}
     $("provider-status-pill").textContent = statusLabels[request.status];
     $("provider-request-name").textContent = `${config.shortTitle} · ${context.title || context.address}`;
     $("provider-company-name").textContent = request.provider || "Awaiting provider match";
+    globalThis.MREO_PROVIDER_BRANDING?.apply($("provider-company-logo"), request.provider || config.provider);
     $("provider-request-summary").innerHTML = requestSummaryHtml(request);
     const attachments = request.attachments || [];
     $("provider-attachment-list").innerHTML = attachments.length ? attachments.map((file) => `<div class="attachment-item">${esc(file.name)} · ${esc(file.type || "file")} · ${Math.max(1, Math.round(file.size / 1024))} KB</div>`).join("") : '<div class="document-empty">No client attachments were included. The core MREO property packet remains available below.</div>';
