@@ -621,3 +621,51 @@ test("completed fictional provider jobs move out of the active provider queue",a
  await expect(completed).toHaveCount(1);
  await expect(completed.locator(".provider-job-signal")).toHaveText("Complete");
 });
+
+
+test("Coordination Reset all test data clears cross-workspace browser state",async({page})=>{
+ const auction="coord-reset-all-test";
+ const coordKey="mreo:coordination:v3:"+auction;
+ const createdTitle="901 Reset Test Lane, Dallas, TX 75201";
+ await page.goto("/coordination.html?type=property&auction="+auction+"&address="+encodeURIComponent(createdTitle)+"&price=410000");
+ await page.evaluate(async({coordKey,createdTitle})=>{
+   await MreoService.register("seller",
+     {name:"Reset Test Seller LLC",email:"reset-seller@example.com"},
+     {title:createdTitle,kind:"property",minimum:410000,days:1,portfolio:[],details:{sellerPhone:"214-555-0101"}}
+   );
+   await MreoService.checkout("seller",true);
+   await MreoService.activate("seller");
+   localStorage.setItem(coordKey,JSON.stringify({
+     version:3,
+     acquisition:{status:"complete"},
+     requests:{title:null,contractors:null,realtors:null,rentals:null},
+     documents:[],
+     activity:[]
+   }));
+   localStorage.setItem("mreo:coordination:provider-demo:v2",JSON.stringify({example:{status:"dirty"}}));
+   const file=new File(["reset-media"],"reset-test.jpg",{type:"image/jpeg"});
+   await MreoService.saveMedia("reset-all-media",[file]);
+ },{coordKey,createdTitle});
+
+ await expect(page.getByRole("button",{name:"Reset all test data"})).toBeVisible();
+ page.once("dialog",async dialog=>{
+   expect(dialog.message()).toContain("Clear all MREO test data");
+   await dialog.accept();
+ });
+ await page.getByRole("button",{name:"Reset all test data"}).click();
+ await expect(page).toHaveURL(/\/coordination\.html$/);
+
+ const result=await page.evaluate(async({coordKey,createdTitle})=>({
+   seller:await MreoService.me("seller"),
+   leftoverCoord:localStorage.getItem(coordKey),
+   providerDemo:localStorage.getItem("mreo:coordination:provider-demo:v2"),
+   mediaCount:(await MreoService.getMedia("reset-all-media")).length,
+   listingExists:(await MreoService.list()).some(item=>item.title===createdTitle)
+ }),{coordKey,createdTitle});
+
+ expect(result.seller).toBeNull();
+ expect(result.leftoverCoord).toBeNull();
+ expect(result.providerDemo).toBeNull();
+ expect(result.mediaCount).toBe(0);
+ expect(result.listingExists).toBe(false);
+});
