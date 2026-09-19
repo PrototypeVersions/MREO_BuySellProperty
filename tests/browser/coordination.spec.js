@@ -364,8 +364,26 @@ test("fictional provider queue jobs require an actual review before completing p
  await page.getByRole("button",{name:"Buyer",exact:true}).click();
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
  await expect(page.locator("#provider-job-attention .attention-title")).toContainText("Review contractor proposal");
- await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Review / respond"}).click();
+ await expect(dialog).toBeVisible();
+ await page.locator("#provider-review-confirmation").check();
+ await page.getByRole("button",{name:"Review contractor proposal"}).click();
+
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#provider-job-attention .attention-title")).toContainText("Review owner approval");
+ await page.getByRole("button",{name:"Review request packet"}).click();
+ await expect(dialog).toBeVisible();
+ await page.locator("#provider-review-confirmation").check();
+ await page.getByRole("button",{name:"Mark approval review complete"}).click();
+
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
+ await expect(page.locator("#provider-job-status")).toHaveText("Complete");
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
 });
 
 
@@ -553,9 +571,46 @@ test("provider demo role switch identifies the correct client when the provider 
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
  await expect(page.locator("#provider-job-attention .attention-title")).toContainText("Submit seller payoff confirmation");
  await page.getByRole("button",{name:"Review / respond"}).click();
- await expect(page.locator("#provider-review-dialog")).toBeVisible();
+ const dialog=page.locator("#provider-review-dialog");
+ await expect(dialog).toBeVisible();
  await expect(page.locator("#provider-review-intro")).toContainText("payoff");
- await page.locator("#provider-review-cancel").click();
- await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await page.locator("#provider-review-confirmation").check();
+ await page.getByRole("button",{name:"Submit seller payoff confirmation"}).click();
+
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#provider-job-attention .attention-title")).toContainText("Review seller payoff information");
+ await page.getByRole("button",{name:"Review request packet"}).click();
+ await expect(dialog).toBeVisible();
+ await page.locator("#provider-review-confirmation").check();
+ await page.getByRole("button",{name:"Mark payoff review complete"}).click();
+
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
+ await expect(page.locator("#provider-job-status")).toHaveText("Complete");
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
+});
+
+test("completed fictional provider jobs move out of the active provider queue",async({page})=>{
+ await page.goto("/coordination-provider-job.html?job=title-maple&role=seller");
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v2"));
+ await page.reload();
+
+ await page.getByRole("button",{name:"Review / respond"}).click();
+ await page.locator("#provider-review-confirmation").check();
+ await page.getByRole("button",{name:"Submit seller payoff confirmation"}).click();
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await page.getByRole("button",{name:"Review request packet"}).click();
+ await page.locator("#provider-review-confirmation").check();
+ await page.getByRole("button",{name:"Mark payoff review complete"}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Complete");
+
+ await page.getByRole("link",{name:"Back to work queue"}).click();
+ await expect(page.locator('#provider-queue [data-provider-source="demo"]').filter({hasText:"4218 Maple Ridge Drive"})).toHaveCount(0);
+ const completed=page.locator('#provider-completed-queue-v6 [data-provider-source="demo"]').filter({hasText:"4218 Maple Ridge Drive"});
+ await expect(completed).toHaveCount(1);
+ await expect(completed.locator(".provider-job-signal")).toHaveText("Complete");
 });
