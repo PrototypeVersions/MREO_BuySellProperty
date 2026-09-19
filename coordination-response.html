@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
   <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v4">
   <link rel="stylesheet" href="coordination-response.css?v=20260917-provider-response-v1">
+  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260918-attention-v6">
 </head>
 <body class="coordination-response-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -37,6 +38,16 @@
         <p id="response-property-meta">Shared property record</p>
         <span class="record-status" id="response-status">Provider reviewing</span>
       </aside>
+    </section>
+
+    <section class="attention-card response-attention-card" id="response-attention-v6" aria-live="polite">
+      <span class="attention-light" aria-hidden="true"></span>
+      <div class="attention-body">
+        <span class="attention-state">Waiting</span>
+        <strong class="attention-title">Checking workflow status.</strong>
+        <p class="attention-copy">MREO is loading the next action for this perspective.</p>
+      </div>
+      <a class="attention-link" id="response-attention-link" href="#"></a>
     </section>
 
     <section class="response-context-bar" aria-label="Response context">
