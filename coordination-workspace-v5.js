@@ -18,7 +18,7 @@
     const key=params.get("auction")||(!hasIncomingContext?"demo-property":label.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""))||"unselected";
     return `mreo:coordination:v3:${key}`;
   })();
-  const demoJobStateKey="mreo:coordination:provider-demo:v1";
+  const demoJobStateKey="mreo:coordination:provider-demo:v2";
   const queryProfile = {
     role:params.get("accountRole")||"",
     name:params.get("accountName")||"",
