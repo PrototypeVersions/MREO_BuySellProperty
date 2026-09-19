@@ -558,11 +558,6 @@
       if(networkVisual)networkVisual.hidden=false;
       if(propertyRecord)propertyRecord.hidden=true;
 
-      const active=demoJobsForCurrentProperty().filter(job=>!job.complete).length;
-      const action=demoJobsForCurrentProperty().filter(job=>!job.complete&&job.actionNeeded).length;
-      setTextIfChanged($("coord-network-active"),String(active));
-      setTextIfChanged($("coord-network-action"),String(action));
-
       setTextIfChanged($("role-workspace-eyebrow"),"Service Partner workspace");
       setTextIfChanged($("role-workspace-title"),"Work that needs your company, in one queue.");
       setTextIfChanged($("role-workspace-copy"),"Start with the action-needed item above, then move through the queue below. Waiting items remain visible so the provider can see what is blocked and which party owns the next step.");
