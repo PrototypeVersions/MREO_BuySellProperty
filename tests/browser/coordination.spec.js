@@ -1,20 +1,15 @@
 import {test,expect} from "@playwright/test";
 
-test("property detail connects buying and coordination",async({page})=>{
+test("property detail keeps Buyer on the interest pathway before Coordination",async({page})=>{
  await page.goto("/properties.html");
  const first=page.locator(".property-marketplace > .property-row").first();
  const thumbnail=await first.locator(".property-thumbnail img").getAttribute("src");
  await first.getByRole("link",{name:"View / Prepare Interest",exact:true}).click();
  await expect(page).toHaveURL(/property\.html\?/);
  await expect(page.locator("#property-detail-image")).toHaveAttribute("src",thumbnail);
+ await expect(page.getByRole("heading",{name:"Prepare buyer interest",exact:true})).toBeVisible();
  await expect(page.getByRole("link",{name:"Prepare Interest"})).toBeVisible();
- await page.getByRole("link",{name:"Coordinate This Property"}).click();
- await expect(page).toHaveURL(/coordination\.html\?/);
- await expect(page.locator("#coord-record-title")).toContainText("4218 Maple Ridge Drive");
- await expect(page.locator(".coordination-card")).toHaveCount(4);
- await expect(page.getByRole("button",{name:"Buyer",exact:true})).toBeVisible();
- await expect(page.getByRole("button",{name:"Seller",exact:true})).toBeVisible();
- await expect(page.getByRole("button",{name:"Service Partner",exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Coordinate This Property"})).toHaveCount(0);
 });
 
 test("Turkey property uses the standard hero, gallery, video, and coordination layout",async({page})=>{
@@ -25,10 +20,9 @@ test("Turkey property uses the standard hero, gallery, video, and coordination l
  await expect(page.locator('.seller-media-grid img[src*="videoframe_18959"]')).toHaveCount(0);
  await expect(page.getByRole("heading",{name:"Property videos",exact:true})).toBeVisible();
  await expect(page.getByRole("link",{name:"Watch the YouTube video"})).toHaveAttribute("href","https://www.youtube.com/watch?v=MUdBlpLWFEY");
- await page.getByRole("link",{name:"Coordinate This Property"}).click();
- await expect(page).toHaveURL(/coordination\.html\?/);
- await expect(page.locator("#coord-record-title")).toContainText("Address awaiting confirmation");
- await expect(page.locator("#coord-record-meta")).toContainText("$7,500,000");
+ await expect(page.getByRole("heading",{name:"Prepare buyer interest",exact:true})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Coordinate This Property"})).toHaveCount(0);
+ await expect(page.getByRole("link",{name:"Prepare Interest",exact:true})).toBeVisible();
 });
 
 test("coordination request is the same object across buyer and service partner views",async({page})=>{
