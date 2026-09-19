@@ -666,6 +666,18 @@ Property: ${context.label}
     container.innerHTML = selectedFiles.length ? selectedFiles.map((file) => `<span class="selected-file-chip">${esc(file.name)} · ${Math.max(1, Math.round(file.size / 1024))} KB</span>`).join("") : '<span class="field-help">No supporting files selected.</span>';
   }
 
+  function titleBuyerSigned(request) {
+    return !!(request?.buyerClosingConfirmed || (request?.ownerRole === "buyer" && request?.clientClosingConfirmed));
+  }
+
+  function titleSellerSigned(request) {
+    return !!(request?.sellerClosingConfirmed || (request?.ownerRole === "seller" && request?.clientClosingConfirmed));
+  }
+
+  function titleCounterpartyRole(request) {
+    return request?.counterpartyRole || (request?.ownerRole === "seller" ? "buyer" : "seller");
+  }
+
   function renderClientRequest(config, request) {
     const form = $("service-request-form");
     const statusCard = $("client-request-status");
@@ -699,22 +711,69 @@ Property: ${context.label}
       $("client-status-copy").textContent = `${request.proposal?.body || config.proposalBody}${amount}`;
       if (isOwner) actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="approve">Approve provider response</button><button type="button" class="secondary-button" data-client-action="request-change">Request a change</button>';
       else $("client-status-copy").textContent = `The provider response is ready and is waiting for the ${ownerLabel} who submitted this request to review it.`;
-    } else if (currentServiceKey === "title" && request.status === "in-progress" && isOwner && !request.clientClosingConfirmed) {
-      $("client-status-copy").textContent = "The settlement provider is preparing the closing. Confirm this fictional signing / closing step once you have completed the required signing.";
-      actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="confirm-closing">Confirm closing / signing complete</button>';
-    } else if (currentServiceKey === "title" && request.status === "in-progress" && request.clientClosingConfirmed) {
-      $("client-status-copy").textContent = "Client closing / signing is confirmed. The settlement provider can now finalize the transfer and publish the final closing record.";
+    } else if (currentServiceKey === "title" && request.status === "counterparty-action") {
+      const counterparty = titleCounterpartyRole(request);
+      if (role === counterparty) {
+        const seller = counterparty === "seller";
+        $("client-status-copy").textContent = seller
+          ? "The buyer has approved the preliminary title response. Confirm the seller-side payoff, lien, title, and closing information so the settlement provider can prepare closing."
+          : "The seller has approved the preliminary title response. Confirm the buyer-side legal name, vesting, funding, and closing information so the settlement provider can prepare closing.";
+        actions.innerHTML = `<button type="button" class="primary-button button-blue" data-client-action="counterparty-confirm">${seller ? "Confirm seller title / payoff information" : "Confirm buyer closing information"}</button>`;
+      } else {
+        $("client-status-copy").textContent = `Waiting for the ${counterparty} to confirm the remaining title / closing information before the provider can begin final closing preparation.`;
+      }
+    } else if (currentServiceKey === "title" && request.status === "in-progress") {
+      const buyerSigned = titleBuyerSigned(request);
+      const sellerSigned = titleSellerSigned(request);
+      if (!buyerSigned) {
+        if (role === "buyer") {
+          $("client-status-copy").textContent = "The settlement provider is preparing closing. Confirm the buyer closing / signing step once the required buyer signatures are complete.";
+          actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="confirm-closing">Confirm buyer closing / signing complete</button>';
+        } else {
+          $("client-status-copy").textContent = "Waiting for the buyer to complete and confirm the buyer-side closing / signing step.";
+        }
+      } else if (!sellerSigned) {
+        if (role === "seller") {
+          $("client-status-copy").textContent = "Buyer signing is confirmed. Confirm the seller closing / signing step once the required seller signatures and payoff items are complete.";
+          actions.innerHTML = '<button type="button" class="primary-button button-blue" data-client-action="confirm-closing">Confirm seller closing / signing complete</button>';
+        } else {
+          $("client-status-copy").textContent = "Buyer signing is confirmed. Waiting for the seller to complete and confirm the seller-side closing / signing step.";
+        }
+      } else {
+        $("client-status-copy").textContent = "Buyer and seller closing / signing steps are confirmed. The settlement provider can now finalize transfer and publish the final closing record.";
+      }
     } else if (request.status === "complete") {
       const completionDoc = state.documents.find((doc) => doc.id === `${currentServiceKey}-completion-${request.id}`);
       if (completionDoc) actions.innerHTML = `<button type="button" class="secondary-button" data-download-document="${esc(completionDoc.id)}">Download completion record</button>`;
     }
     actions.querySelectorAll("[data-client-action]").forEach((button) => button.addEventListener("click", () => {
       if (button.dataset.clientAction === "provide-info") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} supplied the requested additional information.`);
-      if (button.dataset.clientAction === "approve") transition(currentServiceKey, "approved", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} approved the provider response.`);
+      if (button.dataset.clientAction === "approve") {
+        if (currentServiceKey === "title") {
+          const active = state.requests[currentServiceKey];
+          if (active) active.counterpartyRole = active.ownerRole === "seller" ? "buyer" : "seller";
+          transition(currentServiceKey, "counterparty-action", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} approved the provider response. The other transaction party now needs to confirm title / closing information.`);
+        } else transition(currentServiceKey, "approved", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} approved the provider response.`);
+      }
       if (button.dataset.clientAction === "request-change") transition(currentServiceKey, "matched", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller" : "Demo Buyer"} requested a revision to the provider response.`);
+      if (button.dataset.clientAction === "counterparty-confirm") {
+        const active = state.requests[currentServiceKey];
+        if (active && role === titleCounterpartyRole(active)) {
+          active.counterpartyInfoConfirmed = true;
+          transition(currentServiceKey, "approved", role === "seller" ? "Seller" : "Buyer", `${role === "seller" ? "Demo Seller confirmed seller-side payoff and title information." : "Demo Buyer confirmed buyer-side closing information."}`);
+        }
+      }
       if (button.dataset.clientAction === "confirm-closing") {
         const active = state.requests[currentServiceKey];
-        if (active) { active.clientClosingConfirmed = true; active.updatedAt = Date.now(); active.lastTransitionAt = active.updatedAt; const actor = active.ownerRole === "seller" ? "Seller" : "Buyer"; addActivity(`${active.ownerRole === "seller" ? "Demo Seller" : "Demo Buyer"} confirmed the fictional closing / signing step.`, actor, true); saveState(); }
+        if (active) {
+          if (role === "buyer") active.buyerClosingConfirmed = true;
+          if (role === "seller") active.sellerClosingConfirmed = true;
+          if (role === active.ownerRole) active.clientClosingConfirmed = true;
+          active.updatedAt = Date.now();
+          active.lastTransitionAt = active.updatedAt;
+          addActivity(`${role === "seller" ? "Demo Seller" : "Demo Buyer"} confirmed the ${role}-side closing / signing step.`, role === "seller" ? "Seller" : "Buyer", true);
+          saveState();
+        }
       }
       renderAll();
     }));
