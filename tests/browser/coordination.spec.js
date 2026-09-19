@@ -263,9 +263,17 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
  await page.locator("#buyer-confirmation").check();
  await page.getByRole("button",{name:"Submit Buyer Interest",exact:true}).click();
  await expect(page).toHaveURL(/payment\.html\?role=buyer$/);
- await expect(page.getByRole("link",{name:"Coordinate →"})).toBeVisible();
+ await expect(page.getByRole("link",{name:"Coordinate →"})).toHaveCount(0);
  await page.locator("#payment-consent").check();
- await page.getByRole("link",{name:"Coordinate →"}).click();
+ await page.locator("#payment-submit").click();
+ await expect(page).toHaveURL(new RegExp("auction\\.html\\?id="+created.auctionId+"&view=buyer"));
+ await page.locator("#bid-amount").fill("250000");
+ await page.locator("#bid-consent").check();
+ await page.getByRole("button",{name:"Place bid",exact:true}).click();
+ await page.locator("#test-controls summary").click();
+ await page.locator("#finish-auction").click();
+ await expect(page.locator("#auction-result")).toContainText("Your bid won");
+ await page.getByRole("link",{name:"Begin closing & coordination →"}).click();
  await expect(page).toHaveURL(/coordination\.html\?/);
  await expect.poll(async()=>await page.locator("#coord-record-image").getAttribute("src")).toMatch(/^blob:/);
  await expect(page.locator("#coord-record-image")).toHaveAttribute("data-primary-media-name","front.png");
@@ -548,8 +556,7 @@ test("every action-needed fictional provider job opens a service-specific review
  const cases=[
    ["title-preston","Closing profile review","Vesting"],
    ["contractor-hickory","Rehabilitation request review","Target budget"],
-   ["realtor-travis","Market-positioning request review","Service requested"],
-   ["rental-meridian","Rent-ready packet review","Target monthly rent"]
+   ["realtor-travis","Market-positioning request review","Service requested"]
  ];
  for(const [job,title,field] of cases){
    await page.goto("/coordination-provider-job.html?job="+job+"&role=provider");
@@ -695,11 +702,12 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-attention-v5 .attention-title")).toContainText("Review closing profile");
 
  const rows=page.locator("#provider-queue [data-v5-provider-row]");
- await expect(rows).toHaveCount(8);
+ await expect(rows).toHaveCount(7);
  await expect(rows.first()).toContainText("Action needed");
  await expect(rows.first()).toContainText("2605 Preston Meadow Court");
  await expect(page.locator("#provider-queue")).toContainText("940 Hickory Grove Road");
  await expect(page.locator("#provider-queue")).toContainText("3921 Travis Street Unit 204");
- await expect(page.locator("#provider-queue")).toContainText("5016 Meridian Place");
+ await expect(page.locator("#provider-queue")).not.toContainText("5016 Meridian Place");
+ await expect(page.locator("#provider-completed-queue-v6")).toContainText("5016 Meridian Place");
  await expect(page.locator("#provider-queue")).toContainText("Waiting for seller payoff statement");
 });
