@@ -142,6 +142,7 @@ html{scroll-behavior:smooth}
 }
 
 /* Provider branding */
+.provider-logo-stage[hidden]{display:none!important}
 .provider-logo-stage{
   min-height:180px;
   display:flex;
