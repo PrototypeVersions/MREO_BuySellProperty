@@ -54,6 +54,8 @@ test("coordination request is the same object across buyer and service partner v
  await expect(page.locator("#provider-status-pill")).toHaveText("Provider reviewing");
  await page.getByRole("link",{name:"Prepare provider response →"}).click();
  await expect(page).toHaveURL(/coordination-response\.html\?/);
+ await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#response-attention-v6 .attention-title")).toContainText("Prepare the provider response");
  await expect(page.locator('input[name="totalPrice"]')).toHaveValue("$28,400");
  await expect(page.locator('textarea[name="lineItems"]')).toContainText("Flooring");
  await page.getByRole("button",{name:"Send response to client"}).click();
