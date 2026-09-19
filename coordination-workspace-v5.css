@@ -94,6 +94,10 @@ html{scroll-behavior:smooth}
   text-transform:uppercase;
   letter-spacing:.04em;
 }
+.provider-job-signal.is-complete{color:#4e7043}
+.provider-job-complete{background:rgba(78,112,67,.055)}
+.provider-completed-section{margin-top:8px}
+.provider-completed-section>h2{margin-bottom:20px}
 .provider-job-signal .mini-attention-light{width:12px;height:12px}
 .provider-job-v5 .provider-job-topline{
   display:flex;
