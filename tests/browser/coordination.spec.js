@@ -491,6 +491,10 @@ test("payment Coordinate carries Buyer and Seller profiles into pre-acquisition 
  expect(sellerHref.searchParams.get("address")).toBe("88 Connected Seller Way, Dallas, TX 75201");
  expect(sellerHref.searchParams.get("mediaKey")).toBeTruthy();
  await sellerCoordinate.click();
+ await expect(page).toHaveURL(/payment\.html\?role=seller$/);
+ await expect(page.locator("#payment-message")).toContainText(/confirm/i);
+ await page.locator("#payment-consent").check();
+ await sellerCoordinate.click();
  await expect(page.locator("#role-workspace-title")).toContainText("seller information is connected");
  await expect(page.locator("#coord-record-status")).toHaveText("Participation record connected");
  await page.locator('[data-service="title"]').click();
@@ -512,6 +516,7 @@ test("payment Coordinate carries Buyer and Seller profiles into pre-acquisition 
  expect(buyerHref.searchParams.get("accountName")).toBe("Connected Buyer LLC");
  expect(buyerHref.searchParams.get("stage")).toBe("planning");
  expect(buyerHref.searchParams.get("purchaseMethod")).toBe("Cash");
+ await page.locator("#payment-consent").check();
  await buyerCoordinate.click();
  await expect(page.locator("#role-workspace-title")).toContainText("buyer information is connected");
  await expect(page.locator("#coord-record-status")).toHaveText("Participation record connected");
