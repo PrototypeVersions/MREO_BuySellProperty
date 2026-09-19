@@ -327,7 +327,7 @@ html{scroll-behavior:smooth}
 .network-job-stats{grid-column:2/3;display:flex;align-items:flex-end;gap:20px}
 .network-job-stats>div{display:grid;grid-template-columns:auto auto;align-items:end;column-gap:6px}
 .network-job-stats>div+div{border-left:1px solid var(--line);padding-left:20px}
-.network-job-stats strong{font-size:30px;line-height:.88;letter-spacing:-.05em;color:#1954b8}
+.network-job-stats strong{font-size:30px;line-height:.88;letter-spacing:-.05em;color:var(--ink)}
 .network-job-stats>div:last-child strong{color:#2c7a49}
 .network-job-stats span{font-size:10px;color:var(--muted);white-space:nowrap;line-height:1.1}
 
