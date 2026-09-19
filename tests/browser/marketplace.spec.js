@@ -71,7 +71,8 @@ test("every sample property opens its own auction through buyer participation",a
    expect(new URL(page.url()).searchParams.get("auction")).toBe(id);
    await expect(page).toHaveURL(/property\.html\?/);
    await expect(page.locator("#property-detail-address")).toHaveText(address);
-   await expect(page.getByRole("link",{name:"Coordinate This Property"})).toBeVisible();
+   await expect(page.getByRole("link",{name:"Coordinate This Property"})).toHaveCount(0);
+   await expect(page.getByRole("heading",{name:"Prepare buyer interest",exact:true})).toBeVisible();
    await page.getByRole("link",{name:"Prepare Interest",exact:true}).click();
    await expect(page.locator("#buyer-offer-address")).toHaveValue(address);
    await page.locator("#buyer-name").fill("Property Buyer");
