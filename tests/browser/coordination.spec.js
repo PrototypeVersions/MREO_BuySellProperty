@@ -688,17 +688,14 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-network-visual")).toBeVisible();
  await expect(page.locator("#coord-property-record-content")).toBeHidden();
  await expect(page.locator("#coord-network-visual .record-eyebrow")).toHaveText("Connected property network");
- await expect(page.locator("#coord-network-visual .network-abstract-stage")).toBeVisible();
- await expect(page.locator("#coord-network-visual .network-abstract-svg")).toBeVisible();
+ await expect(page.locator("#coord-network-illustration")).toBeVisible();
+ await expect(page.locator("#coord-network-illustration")).toHaveAttribute("src","assets/coordination-property-network.svg");
+ await expect(page.locator(".network-abstract-svg")).toHaveCount(0);
  await expect(page.locator("#coord-network-visual .network-abstract-label")).toHaveCSS("font-size","19px");
- await expect(page.locator("#coord-network-visual .network-nodes circle")).toHaveCount(22);
- await expect(page.locator("#coord-network-visual .network-traces path")).toHaveCount(8);
- await expect(page.locator("#coord-network-visual .network-property-card")).toHaveCount(0);
- await expect(page.locator("#coord-network-visual .network-inbox-label")).toHaveCount(0);
- await expect(page.locator("#coord-network-active")).toHaveCount(0);
- await expect(page.locator("#coord-network-action")).toHaveCount(0);
- await expect(page.locator("#coord-network-visual")).not.toContainText("active jobs");
- await expect(page.locator("#coord-network-visual")).not.toContainText("need provider action");
+ await expect(page.locator("#coord-network-active")).toHaveText("7");
+ await expect(page.locator("#coord-network-action")).toHaveText("3");
+ await expect(page.locator("#coord-network-visual")).toContainText("7 active demonstration jobs");
+ await expect(page.locator("#coord-network-visual")).toContainText("3 need provider action");
  await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
 
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
