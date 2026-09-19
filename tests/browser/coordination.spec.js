@@ -694,7 +694,15 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-network-visual")).toContainText("active jobs");
  await expect(page.locator("#coord-network-visual")).not.toContainText("active demonstration jobs");
  await expect(page.locator(".network-property-card")).toHaveCount(4);
- await expect(page.locator(".network-property-card")).toContainText(["2605 Preston Meadow","940 Hickory Grove","3921 Travis Street","4218 Maple Ridge"]);
+ await expect(page.locator(".network-property-card > strong")).toHaveCount(0);
+ await expect(page.locator(".network-property-card > small")).toHaveCount(0);
+ const networkColors=await page.evaluate(()=>({
+   active:getComputedStyle(document.querySelector("#coord-network-active")).color,
+   action:getComputedStyle(document.querySelector("#coord-network-action")).color,
+   body:getComputedStyle(document.body).color
+ }));
+ expect(networkColors.active).toBe(networkColors.body);
+ expect(networkColors.action).not.toBe(networkColors.active);
  await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
 
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
