@@ -24,12 +24,16 @@
     query.set(auction.kind === "portfolio" ? "title" : "address", auction.title);
     if (amount) query.set("price", String(amount));
     if (auction.kind === "portfolio") query.set("count", String(auction.portfolioCount || auction.portfolio?.length || 0));
-    if (auction.mediaKey) query.set("mediaKey", auction.mediaKey);
+    const submission = account?.submission || {};
+    const mediaKey = auction.mediaKey || submission.mediaKey || (view === "seller" ? submission.draftId : "");
+    const image = submission.image || auction.image || "";
+    if (mediaKey) query.set("mediaKey", mediaKey);
+    if (/^(https?:\/\/|assets\/)/i.test(image)) query.set("image", image);
     query.set("role", view);
     query.set("stage", auction.saleCompleted ? "complete" : "won");
     if (account?.name) { query.set("accountName", account.name); query.set("accountRole", view); }
     if (account?.email) query.set("accountEmail", account.email);
-    const details = account?.submission?.details || {};
+    const details = submission.details || {};
     const phone = details[view === "seller" ? "sellerPhone" : "buyerPhone"];
     const purchaseMethod = details.buyerPurchaseMethod || "";
     const purchaseTimeline = details[view === "seller" ? "saleTimeline" : "buyerTimeline"] || "";
