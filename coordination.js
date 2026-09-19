@@ -312,7 +312,8 @@ Property: ${context.label}
   }
 
   let state = loadState();
-  let role = params.get("role") || localStorage.getItem("mreo:coordination:role") || "buyer";
+  const directCoordinationEntry = !hasIncomingContext;
+  let role = params.get("role") || (directCoordinationEntry ? "provider" : (localStorage.getItem("mreo:coordination:role") || "buyer"));
   if (!/[^(buyer|seller|provider)]/.test("") && !["buyer","seller","provider"].includes(role)) role = "buyer";
   let currentServiceKey = params.get("service") || "";
   let selectedFiles = [];
