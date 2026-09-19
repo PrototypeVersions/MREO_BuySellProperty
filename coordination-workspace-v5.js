@@ -161,11 +161,19 @@
     const entries=Object.entries(state?.requests||{}).filter(([,request])=>request);
     for(const [key,request] of entries){
       const label=serviceLabels[key]?.title||key;
-      if(request.status==="proposal")return {on:true,title:`Review the ${label.toLowerCase()} provider response.`,copy:"A detailed provider response is ready. Review the terms, scope, requirements, and notes before approving or requesting changes.",href:responseHref(key,currentRole),link:"Review provider response →"};
-      if(request.status==="needs-info")return {on:true,title:`Provide information for ${label}.`,copy:"The service provider needs additional information before it can continue.",href:serviceHref(key,currentRole),link:"Open request →"};
-      if(key==="title"&&request.status==="in-progress"&&currentRole==="buyer"&&!request.clientClosingConfirmed)return {on:true,title:"Confirm the closing / signing step.",copy:"The settlement provider is waiting for the buyer to confirm that the required signing step is complete.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
+      const isOwner=request.ownerRole===currentRole;
+      if(request.status==="complete")continue;
+      if(request.status==="proposal"){
+        if(isOwner)return {on:true,title:`Review the ${label.toLowerCase()} provider response.`,copy:"A detailed provider response is ready. Review the terms, scope, requirements, and notes before approving or requesting changes.",href:responseHref(key,currentRole),link:"Review provider response →"};
+        return {on:false,title:`Waiting for ${request.ownerRole==="seller"?"seller":"buyer"} review.`,copy:`The provider response is ready, but the ${request.ownerRole==="seller"?"seller":"buyer"} who submitted this request must approve it or request changes.`,href:responseHref(key,currentRole),link:"View provider response →"};
+      }
+      if(request.status==="needs-info"){
+        if(isOwner)return {on:true,title:`Provide information for ${label}.`,copy:"The service provider needs additional information before it can continue.",href:serviceHref(key,currentRole),link:"Open request →"};
+        return {on:false,title:`Waiting for ${request.ownerRole==="seller"?"seller":"buyer"} information.`,copy:"The provider requested additional information from the client who submitted this request.",href:serviceHref(key,currentRole),link:"View request →"};
+      }
+      if(key==="title"&&request.status==="in-progress"&&isOwner&&!request.clientClosingConfirmed)return {on:true,title:"Confirm the closing / signing step.",copy:"The settlement provider is waiting for the client who submitted this request to confirm that the required signing step is complete.",href:serviceHref(key,currentRole),link:"Open Title / Settlement →"};
       if(request.status==="submitted")return {on:false,title:`Waiting for a ${label.toLowerCase()} provider.`,copy:"The request has been submitted. MREO is waiting for a participating provider to accept it.",href:serviceHref(key,currentRole),link:"View request →"};
-      if(request.status==="matched")return {on:false,title:`${label} is under provider review.`,copy:"The participating provider is reviewing the connected property record and request.",href:serviceHref(key,currentRole),link:"View request →"};
+      if(request.status==="matched")return {on:false,title:`${label} is under provider review.`,copy:request.revisionRequest?"The client requested changes and the participating provider is revising the response.":"The participating provider is reviewing the connected property record and request.",href:serviceHref(key,currentRole),link:"View request →"};
       if(request.status==="approved"||request.status==="in-progress")return {on:false,title:`Waiting on the ${label.toLowerCase()} provider.`,copy:"The client-side step is complete. The participating provider is now responsible for the next workflow action.",href:serviceHref(key,currentRole),link:"View request →"};
     }
     if(state?.acquisition?.status!=="complete")return {on:true,title:"Choose the next closing step.",copy:"The winning transaction is recorded, but closing is still required. Title / Settlement is the recommended next pathway.",href:"#coordination-pathways",link:"See service paths ↓"};
