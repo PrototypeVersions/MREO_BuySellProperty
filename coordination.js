@@ -46,7 +46,7 @@
       provider: "Northstar Title & Settlement · demonstration",
       specialty: "Title / settlement",
       clientIntro: "Begin the closing process using the transaction information already attached to the property record. Confirm the buyer details a title / settlement company would ordinarily need, then review requirements, approve the provider response, and confirm signing before transfer is completed.",
-      steps: ["Confirm closing profile, legal name, vesting, funding, and target date", "Provider accepts the file and reviews the connected transaction record", "Preliminary title / settlement requirements are returned", "Client approves the provider response and completes required closing steps", "Transfer and final closing record are completed"],
+      steps: ["Buyer or initiating party confirms the closing profile", "Title / settlement provider accepts and reviews the connected record", "Provider returns preliminary title / settlement requirements", "Initiating client reviews and approves the provider response", "Other transaction party confirms title, payoff, or buyer-side information", "Buyer and seller complete their respective closing / signing steps", "Provider finalizes transfer and publishes the closing record"],
       action: "Start title / settlement request",
       fields: `
         <div class="service-form-section"><h3>Buyer closing profile</h3>
@@ -149,12 +149,13 @@
     }
   };
 
-  const statusOrder = ["submitted","matched","needs-info","proposal","approved","in-progress","complete"];
+  const statusOrder = ["submitted","matched","needs-info","proposal","counterparty-action","approved","in-progress","complete"];
   const statusLabels = {
     "submitted":"Submitted",
     "matched":"Provider reviewing",
     "needs-info":"Information requested",
     "proposal":"Proposal ready",
+    "counterparty-action":"Counterparty action",
     "approved":"Approved",
     "in-progress":"In progress",
     "complete":"Complete"
@@ -164,7 +165,8 @@
     "matched":"A participating company has accepted the request and is reviewing the shared property packet.",
     "needs-info":"The participating company needs additional client information before it can proceed.",
     "proposal":"The provider has returned its fictional engagement terms, scope, or proposal for client review.",
-    "approved":"The client approved the provider response. The company can now schedule or begin its work.",
+    "counterparty-action":"The initiating client approved the title response. The other transaction party now needs to confirm its title / closing information.",
+    "approved":"The required client-side response is approved. The company can now schedule or begin its work.",
     "in-progress":"The provider is performing the fictional service and posting progress to the shared property record.",
     "complete":"The service is complete and its closeout documents are attached to the property record."
   };
@@ -302,7 +304,7 @@ Property: ${context.label}
   function addProviderDocuments(serviceKey, request) {
     const config = services[serviceKey];
     if (!config || !request) return;
-    if (["proposal","approved","in-progress","complete"].includes(request.status)) {
+    if (["proposal","counterparty-action","approved","in-progress","complete"].includes(request.status)) {
       addDocument(documentRecord(
         `${serviceKey}-proposal-${request.id}`,
         `${config.proposalTitle}.txt`,
@@ -330,7 +332,7 @@ Property: ${context.label}
     request.status = nextStatus;
     request.updatedAt = Date.now();
     request.lastTransitionAt = request.updatedAt;
-    if (["matched","needs-info","proposal","approved","in-progress","complete"].includes(nextStatus) && !request.provider) request.provider = services[serviceKey].provider;
+    if (["matched","needs-info","proposal","counterparty-action","approved","in-progress","complete"].includes(nextStatus) && !request.provider) request.provider = services[serviceKey].provider;
     if (nextStatus === "proposal") request.proposal = {title:services[serviceKey].proposalTitle, amount:services[serviceKey].proposalAmount, body:services[serviceKey].proposalBody, at:Date.now()};
     addActivity(text || `${services[serviceKey].shortTitle} moved to ${statusLabels[nextStatus]}.`, actor || "MREO", ["proposal","complete"].includes(nextStatus));
     addProviderDocuments(serviceKey, request);
