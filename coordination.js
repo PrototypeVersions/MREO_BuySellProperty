@@ -39,6 +39,17 @@
   context.key = context.auction || context.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "unselected";
   context.isDefaultDemo = !hasIncomingContext;
 
+  const incomingProfile = {
+    role: params.get("accountRole") || "",
+    name: params.get("accountName") || "",
+    email: params.get("accountEmail") || "",
+    phone: params.get("accountPhone") || "",
+    purchaseMethod: params.get("purchaseMethod") || "",
+    timeline: params.get("purchaseTimeline") || ""
+  };
+  const incomingBuyerName = incomingProfile.role === "buyer" && incomingProfile.name ? incomingProfile.name : "Demo Buyer";
+  const incomingSellerName = incomingProfile.role === "seller" && incomingProfile.name ? incomingProfile.name : "Demo Seller";
+
   const services = {
     title: {
       eyebrow: "01 · Transfer",
@@ -208,8 +219,8 @@ This information remains inside MREO and is automatically available to participa
 
 Property: ${context.label}
 Price / winning amount: ${price}
-Buyer: Demo Buyer
-Seller: Demo Seller
+Buyer: ${incomingBuyerName}
+Seller: ${incomingSellerName}
 Auction: ${context.auction || "demonstration auction"}
 Status: ${stage}
 
@@ -235,8 +246,10 @@ Property: ${context.label}
       createdAt: now,
       acquisition: {
         status: planning ? "planning" : (pendingClosing ? "pending-closing" : "complete"),
-        buyer: "Demo Buyer",
-        seller: "Demo Seller",
+        buyer: incomingBuyerName,
+        seller: incomingSellerName,
+        buyerProfile: incomingProfile.role === "buyer" ? {...incomingProfile} : null,
+        sellerProfile: incomingProfile.role === "seller" ? {...incomingProfile} : null,
         price: Number(context.price || 385000),
         completedAt: planning || pendingClosing ? null : now - 86400000,
         auctionId: context.auction || "demo-property"
@@ -247,11 +260,11 @@ Property: ${context.label}
         {id:"plan-2", at:now - 60000, actor:params.get("accountRole")==="seller"?"Seller":"Buyer", important:true, text:`${params.get("accountName") || (params.get("accountRole")==="seller" ? "Demo Seller" : "Demo Buyer")} opened Coordination from the participation pathway.`},
         {id:"plan-1", at:now - 120000, actor:"MREO", important:false, text:"Existing Buy / Sell information was carried into the property workspace for planning and later coordination."}
       ] : pendingClosing ? [
-        {id:"acq-2", at:now - 300000, actor:"Auction", important:true, text:`Demo Buyer recorded the winning result at ${money(context.price) || "$385,000"}. Seller acceptance and closing are still required.`},
+        {id:"acq-2", at:now - 300000, actor:"Auction", important:true, text:`${incomingBuyerName} recorded the winning result at ${money(context.price) || "$385,000"}. Seller acceptance and closing are still required.`},
         {id:"acq-1", at:now - 360000, actor:"MREO", important:false, text:"The winning transaction entered the property workspace so title / settlement can begin."}
       ] : [
         {id:"acq-3", at:now - 86400000, actor:"MREO", important:true, text:"Acquisition completed and the property entered the coordination workspace."},
-        {id:"acq-2", at:now - 90000000, actor:"Auction", important:false, text:`Demo Buyer recorded the winning result at ${money(context.price) || "$385,000"}.`},
+        {id:"acq-2", at:now - 90000000, actor:"Auction", important:false, text:`${incomingBuyerName} recorded the winning result at ${money(context.price) || "$385,000"}.`},
         {id:"acq-1", at:now - 93600000, actor:"Seller", important:false, text:"Demo Seller made the connected property record available to the winning buyer."}
       ]
     };
@@ -266,6 +279,19 @@ Property: ${context.label}
     try {
       const parsed = JSON.parse(localStorage.getItem(stateKey) || "null");
       if (parsed && parsed.version === 3 && parsed.requests && parsed.documents && parsed.activity) {
+        parsed.acquisition = parsed.acquisition || {};
+        if (context.price) parsed.acquisition.price = Number(context.price);
+        if (context.auction) parsed.acquisition.auctionId = context.auction;
+        if (incomingProfile.role === "buyer" && incomingProfile.name) {
+          parsed.acquisition.buyer = incomingProfile.name;
+          parsed.acquisition.buyerProfile = {...incomingProfile};
+        }
+        if (incomingProfile.role === "seller" && incomingProfile.name) {
+          parsed.acquisition.seller = incomingProfile.name;
+          parsed.acquisition.sellerProfile = {...incomingProfile};
+        }
+        const baseById = Object.fromEntries(baseDocuments().map(doc => [doc.id, doc]));
+        parsed.documents = parsed.documents.map(doc => baseById[doc.id] ? {...doc, body:baseById[doc.id].body, name:baseById[doc.id].name, category:baseById[doc.id].category, audience:baseById[doc.id].audience} : doc);
         if (context.stage === "won" && parsed.acquisition?.status === "planning") {
           parsed.acquisition.status = "pending-closing";
           parsed.acquisition.completedAt = null;
