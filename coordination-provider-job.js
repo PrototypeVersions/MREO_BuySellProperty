@@ -19,7 +19,11 @@
   function current(){
     if(!job)return null;
     const saved=read()[job.id]||{};
-    return {...job,...saved};
+    const merged={...job,...saved};
+    if(!merged.phase){
+      merged.phase=merged.complete?"complete":merged.actionNeeded?"initial":merged.waitingOnRole?"client":"waiting";
+    }
+    return merged;
   }
 
   function setSaved(data){
@@ -31,6 +35,10 @@
   function roleLabel(value){return roleNames[value]||"Client";}
 
   function attentionFor(data){
+    if(data.complete||data.phase==="complete"){
+      return {on:false,state:"Complete",title:"Complete",copy:data.summary||"This demonstration work item is complete."};
+    }
+
     if(role==="provider"){
       return data.actionNeeded
         ? {on:true,state:"Action needed",title:data.status,copy:data.summary}
@@ -71,18 +79,27 @@
   function setAttention(data){
     const card=$("provider-job-attention");
     const state=attentionFor(data);
-    card.classList.toggle("is-on",!!state.on);
-    card.classList.toggle("is-off",!state.on);
+    const complete=state.state==="Complete";
+    card.classList.toggle("is-on",!!state.on&&!complete);
+    card.classList.toggle("is-off",!state.on&&!complete);
+    card.classList.toggle("is-complete",complete);
     card.querySelector(".attention-state").textContent=state.state;
     card.querySelector(".attention-title").textContent=state.title;
     card.querySelector(".attention-copy").textContent=state.copy;
 
     const link=$("provider-job-attention-link");
-    if(state.on){
+    if(complete){
+      link.hidden=true;
+      link.removeAttribute("href");
+      link.textContent="";
+      link.onclick=null;
+    }else if(state.on){
+      link.hidden=false;
       link.href="#";
       link.textContent=role==="provider"?"Review request →":"Review / respond →";
       link.onclick=(event)=>{event.preventDefault();openReview(data,role==="provider"?"provider":"client");};
     }else{
+      link.hidden=false;
       link.href="#provider-job-request";
       link.textContent="View request details ↓";
       link.onclick=null;
@@ -142,11 +159,29 @@
   }
 
   function finishProviderReview(data){
+    if(data.phase==="followup"){
+      setSaved({
+        phase:"complete",
+        complete:true,
+        actionNeeded:false,
+        waitingOnRole:"",
+        status:"Complete",
+        summary:data.completionSummary||"The final provider follow-up is complete. This demonstration work item is complete.",
+        task:"No further action is required.",
+        button:"",
+        after:"",
+        afterWaitingOnRole:""
+      });
+      return;
+    }
+
     setSaved({
+      phase:"client",
+      complete:false,
       actionNeeded:false,
       status:data.after||"Waiting for client",
       summary:data.after||"The provider completed its current step and is waiting for the next party.",
-      waitingOnRole:data.afterWaitingOnRole||data.ownerRole||"",
+      waitingOnRole:data.afterWaitingOnRole ?? data.ownerRole ?? "",
       task:data.clientTask||data.task,
       button:data.clientButton||"",
       reviewTitle:data.providerFollowUpTitle||data.reviewTitle,
@@ -156,13 +191,15 @@
 
   function finishClientReview(data){
     setSaved({
+      phase:"followup",
+      complete:false,
       actionNeeded:true,
       waitingOnRole:"",
       status:data.providerFollowUpTitle||`${roleLabel(role)} information received`,
       summary:data.clientAfter||`${roleLabel(role)} completed the requested step. Provider follow-up is required.`,
       task:data.providerFollowUpTask||"Review the newly received client information and continue the provider workflow.",
       button:data.providerFollowUpButton||"Mark follow-up review complete",
-      after:data.providerFollowUpAfter||"Provider follow-up review is complete. Waiting for the next workflow step.",
+      after:"",
       afterWaitingOnRole:"",
       reviewTitle:data.providerFollowUpTitle||"Review client follow-up",
       reviewIntro:data.clientAfter||"The client completed the requested item. Review the update before continuing."
@@ -173,7 +210,7 @@
     const actions=$("provider-job-actions");
     actions.innerHTML="";
 
-    if(state.on){
+    if(state.state!=="Complete"&&state.on){
       const button=document.createElement("button");
       button.type="button";
       button.className="primary-button button-blue";
@@ -213,7 +250,9 @@
     $("provider-job-fields").innerHTML=(data.details||[]).map(([label,value])=>`<div class="provider-job-field"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`).join("");
 
     const state=setAttention(data);
-    if(role==="provider"){
+    if(state.state==="Complete"){
+      $("provider-job-task-title").textContent="Complete";
+    }else if(role==="provider"){
       $("provider-job-task-title").textContent=state.on?"Provider action":"Provider waiting";
     }else{
       $("provider-job-task-title").textContent=state.on?`${roleLabel(role)} action`:`${roleLabel(role)} waiting`;
