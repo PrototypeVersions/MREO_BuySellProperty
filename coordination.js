@@ -342,16 +342,27 @@ Property: ${context.label}
   function advanceRequest(serviceKey) {
     const request = state.requests[serviceKey];
     if (!request) { toast("Start this coordination pathway first, then the demo can advance it."); return false; }
-    const next = {
+    let next = {
       "submitted":"matched",
       "matched":"proposal",
       "needs-info":"matched",
       "proposal":"approved",
+      "counterparty-action":"approved",
       "approved":"in-progress",
       "in-progress":"complete"
     }[request.status];
+    if (serviceKey === "title" && request.status === "proposal") {
+      request.counterpartyRole = request.ownerRole === "seller" ? "buyer" : "seller";
+      next = "counterparty-action";
+    }
     if (!next) { toast("This request is already complete."); return false; }
-    if (serviceKey === "title" && request.status === "in-progress" && !request.clientClosingConfirmed) { toast(`Switch to the ${request.ownerRole === "seller" ? "Seller" : "Buyer"} view and confirm the closing / signing step before completing the title workflow.`); return false; }
+    if (serviceKey === "title" && request.status === "counterparty-action") {
+      request.counterpartyInfoConfirmed = true;
+    }
+    if (serviceKey === "title" && request.status === "in-progress" && (!titleBuyerSigned(request) || !titleSellerSigned(request))) {
+      toast(!titleBuyerSigned(request) ? "Switch to the Buyer view and confirm buyer closing / signing before final transfer." : "Switch to the Seller view and confirm seller closing / signing before final transfer.");
+      return false;
+    }
     const config = services[serviceKey];
     const messages = {
       matched:`${config.provider} accepted the request and opened the shared property packet.`,
@@ -377,7 +388,7 @@ Property: ${context.label}
         // Wait for the Service Partner to prepare and send the provider response.
       } else if (request.status === "approved" && elapsed > 15000) {
         transition(serviceKey, "in-progress", "Service Partner", `${services[serviceKey].provider} began the approved demonstration work.`); changed = true;
-      } else if (request.status === "in-progress" && elapsed > 25000 && (serviceKey !== "title" || request.clientClosingConfirmed)) {
+      } else if (request.status === "in-progress" && elapsed > 25000 && serviceKey !== "title") {
         transition(serviceKey, "complete", "Service Partner", `${services[serviceKey].provider} completed the demonstration service.`); changed = true;
       }
     });
@@ -813,13 +824,27 @@ Property: ${context.label}
     } else if (request.status === "proposal") {
       guidance.textContent = "Provider response sent. Waiting for the client to approve or request a revision.";
       addButton("Waiting for approval", "wait", false, true);
+    } else if (request.status === "counterparty-action") {
+      const counterparty = titleCounterpartyRole(request);
+      guidance.textContent = `The initiating client approved the title response. Waiting for the ${counterparty} to confirm the remaining title / closing information.`;
+      addButton(`Waiting for ${counterparty} title information`, "wait", false, true);
     } else if (request.status === "approved") {
-      guidance.textContent = "The client approved the response. Begin or schedule the service.";
-      addButton("Start work", "in-progress", true);
+      guidance.textContent = currentServiceKey === "title" ? "Buyer / seller information is confirmed. Begin final closing preparation." : "The client approved the response. Begin or schedule the service.";
+      addButton(currentServiceKey === "title" ? "Begin closing preparation" : "Start work", "in-progress", true);
     } else if (request.status === "in-progress") {
-      if (currentServiceKey === "title" && !request.clientClosingConfirmed) {
-        guidance.textContent = `Closing preparation is in progress. Waiting for the ${request.ownerRole === "seller" ? "seller" : "buyer"} who submitted the request to confirm the fictional signing / closing step before final transfer can be completed.`;
-        addButton(`Waiting for ${request.ownerRole === "seller" ? "seller" : "buyer"} closing confirmation`, "wait", false, true);
+      if (currentServiceKey === "title") {
+        const buyerSigned = titleBuyerSigned(request);
+        const sellerSigned = titleSellerSigned(request);
+        if (!buyerSigned) {
+          guidance.textContent = "Closing preparation is in progress. Waiting for the buyer to complete and confirm buyer-side signing.";
+          addButton("Waiting for buyer closing confirmation", "wait", false, true);
+        } else if (!sellerSigned) {
+          guidance.textContent = "Buyer signing is confirmed. Waiting for the seller to complete seller-side signing and payoff requirements.";
+          addButton("Waiting for seller closing confirmation", "wait", false, true);
+        } else {
+          guidance.textContent = "Buyer and seller signing are confirmed. Finalize the transfer and publish the closing record.";
+          addButton("Finalize transfer / mark complete", "complete", true);
+        }
       } else {
         guidance.textContent = "Work is in progress. When finished, complete the job and publish the final record.";
         addButton("Mark complete", "complete", true); addButton("Request information", "needs-info");
