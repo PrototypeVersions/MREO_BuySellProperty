@@ -113,7 +113,9 @@ async function payment(){
  if(!$("payment-submit"))return;
  const role=params.get("role")==="seller"?"seller":"buyer";S.setRole(role);$("payment-role").textContent=role==="seller"?"Seller":"Buyer";$("payment-back").href=role+".html";
  if(S.demo){$("payment-intro").textContent="Try the complete participation flow with a $1 test credit."; $("payment-explanation").textContent="This test step does not charge money or collect payment credentials. The connected version uses Stripe checkout to collect $1 and save your payment method."; $("payment-consent-label").textContent="I understand this adds a $1 test credit. No money is charged and no card is saved.";}
- const button=$("payment-submit"),coordinate=$("payment-coordinate");
+ const button=$("payment-submit"),coordinate=$("payment-coordinate"),coordinateActions=$("payment-coordinate-actions"),coordinateNote=$("payment-coordinate-note");
+ if(coordinateActions)coordinateActions.hidden=role!=="seller";
+ if(coordinateNote)coordinateNote.hidden=role!=="seller";
  function coordinateHref(account){
   const q=new URLSearchParams({role,accountRole:role,stage:"planning"});
   if(account?.name)q.set("accountName",account.name);
