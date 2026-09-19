@@ -464,6 +464,8 @@ test("completed provider work is separated from the active queue and labeled Com
  await page.reload();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await expect(page.locator('#provider-queue [data-provider-source="live"]')).toHaveCount(0);
+ await expect(page.locator('#provider-queue .status-complete')).toHaveCount(0);
+ await expect(page.locator('#provider-queue .provider-job').filter({hasText:"Title / Settlement · 4218 Maple Ridge Drive"})).toHaveCount(0);
  const completed=page.locator('#provider-completed-queue-v6 [data-provider-source="live"]');
  await expect(completed).toHaveCount(1);
  await expect(completed.locator(".provider-job-signal")).toHaveText("Complete");
