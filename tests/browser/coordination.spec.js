@@ -688,21 +688,16 @@ test("direct Coordinate opens an actionable network-level Service Partner inbox"
  await expect(page.locator("#coord-network-visual")).toBeVisible();
  await expect(page.locator("#coord-property-record-content")).toBeHidden();
  await expect(page.locator("#coord-network-visual .record-eyebrow")).toHaveText("Connected property network");
- await expect(page.locator("#coord-network-visual .network-inbox-label")).toHaveText("Service Partner network inbox");
- await expect(page.locator("#coord-network-active")).toHaveText("7");
- await expect(page.locator("#coord-network-action")).toHaveText("3");
- await expect(page.locator("#coord-network-visual")).toContainText("active jobs");
- await expect(page.locator("#coord-network-visual")).not.toContainText("active demonstration jobs");
- await expect(page.locator(".network-property-card")).toHaveCount(4);
- await expect(page.locator(".network-property-card > strong")).toHaveCount(0);
- await expect(page.locator(".network-property-card > small")).toHaveCount(0);
- const networkColors=await page.evaluate(()=>({
-   active:getComputedStyle(document.querySelector("#coord-network-active")).color,
-   action:getComputedStyle(document.querySelector("#coord-network-action")).color,
-   body:getComputedStyle(document.body).color
- }));
- expect(networkColors.active).toBe(networkColors.body);
- expect(networkColors.action).not.toBe(networkColors.active);
+ await expect(page.locator("#coord-network-visual .network-abstract-stage")).toBeVisible();
+ await expect(page.locator("#coord-network-visual .network-abstract-svg")).toBeVisible();
+ await expect(page.locator("#coord-network-visual .network-nodes circle")).toHaveCount(14);
+ await expect(page.locator("#coord-network-visual .network-traces path")).toHaveCount(5);
+ await expect(page.locator("#coord-network-visual .network-property-card")).toHaveCount(0);
+ await expect(page.locator("#coord-network-visual .network-inbox-label")).toHaveCount(0);
+ await expect(page.locator("#coord-network-active")).toHaveCount(0);
+ await expect(page.locator("#coord-network-action")).toHaveCount(0);
+ await expect(page.locator("#coord-network-visual")).not.toContainText("active jobs");
+ await expect(page.locator("#coord-network-visual")).not.toContainText("need provider action");
  await expect(page.locator("#role-workspace-title")).toHaveText("Work that needs your company, in one queue.");
 
  await expect(page.locator("#coord-attention-v5 .attention-state")).toHaveText("Action needed");
