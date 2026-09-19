@@ -147,34 +147,58 @@ test("coordination keeps property records connected without unnecessary download
  await expect(page.locator("#acquisition-details")).toContainText("Winning buyer");
 });
 
-test("title workflow requires buyer closing participation",async({page})=>{
+test("title workflow rotates action across buyer seller and service partner",async({page})=>{
  const base="/coordination.html?type=property&auction=coord-title-buyer&address=2605%20Preston%20Meadow%20Court%2C%20Plano%2C%20TX%2075093&price=2000000&stage=won";
  await page.goto(base);
  await page.evaluate(()=>localStorage.removeItem("mreo:coordination:v3:coord-title-buyer"));
  await page.reload();
  await expect(page.locator("#acquisition-heading")).toContainText("Seller acceptance and closing");
- await expect(page.getByRole("link",{name:"What comes next ↓"})).toBeVisible();
  await page.locator('[data-service="title"]').click();
- await expect(page.locator('input[name="legalName"]')).toBeVisible();
- await expect(page.locator('select[name="funding"]')).toBeVisible();
+
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
  await page.locator("#service-submit").click();
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
  await page.getByRole("button",{name:"Accept request"}).click();
  await page.getByRole("link",{name:"Prepare provider response →"}).click();
  await expect(page.locator('input[name="totalCharges"]')).toHaveValue("$2,150");
- await expect(page.locator('textarea[name="requirements"]')).toContainText("Confirm legal name and vesting");
+ await expect(page.locator('textarea[name="requirements"]')).toContainText("Seller:");
  await page.getByRole("button",{name:"Send response to client"}).click();
+
  await page.getByRole("button",{name:"Buyer",exact:true}).click();
- await expect(page.locator("#client-response-details")).toContainText("Preliminary title findings");
+ await expect(page.locator("#response-attention-v6 .attention-state")).toHaveText("Action needed");
  await page.getByRole("button",{name:"Approve response"}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Waiting");
+
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
+ await expect(page.getByRole("button",{name:"Confirm seller title / payoff information"})).toBeVisible();
+ await page.getByRole("button",{name:"Confirm seller title / payoff information"}).click();
+
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
- await page.getByRole("button",{name:"Start work"}).click();
- await expect(page.getByRole("button",{name:"Waiting for buyer closing confirmation"})).toBeDisabled();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
+ await page.getByRole("button",{name:"Begin closing preparation"}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Waiting");
+
  await page.getByRole("button",{name:"Buyer",exact:true}).click();
- await expect(page.getByRole("button",{name:"Confirm closing / signing complete"})).toBeVisible();
- await page.getByRole("button",{name:"Confirm closing / signing complete"}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
+ await page.getByRole("button",{name:"Confirm buyer closing / signing complete"}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Waiting");
+
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
+ await page.getByRole("button",{name:"Confirm seller closing / signing complete"}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Waiting");
+
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
- await expect(page.getByRole("button",{name:"Mark complete"})).toBeVisible();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
+ await page.getByRole("button",{name:"Finalize transfer / mark complete"}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Complete");
+
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Complete");
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Complete");
 });
 
 test("seller-created property listings are routed through the detail page",async({page})=>{
