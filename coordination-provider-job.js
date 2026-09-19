@@ -7,7 +7,7 @@
   const job=jobs.find(item=>item.id===id);
   const $=id=>document.getElementById(id);
   const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const storeKey="mreo:coordination:provider-demo:v1";
+  const storeKey="mreo:coordination:provider-demo:v2";
   const labels={title:"01 · TITLE / SETTLEMENT",contractors:"02 · CONTRACTORS",realtors:"03 · REALTORS",rentals:"04 · RENT / MANAGE"};
   const roleNames={buyer:"Buyer",seller:"Seller",provider:"Service Partner"};
   let role=["buyer","seller","provider"].includes(params.get("role"))?params.get("role"):"provider";
