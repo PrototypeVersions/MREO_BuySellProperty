@@ -132,18 +132,45 @@ async function payment(){
   return "coordination.html?"+q.toString();
  }
  async function refresh(){
- const a=await S.me(role);if(!a){message("payment-message","Submit your "+role+" information before completing participation.",true);button.disabled=true;button.textContent="Submit your information first";return null;}
- $("payment-account").textContent=a.name;$("payment-credit").textContent="$"+(Number(a.creditCents||0)/100).toFixed(2)+(S.demo?" test":"");if(coordinate)coordinate.href=coordinateHref(a);
- const paid=a.creditCents>=100;$("payment-consent-row").hidden=paid;button.disabled=false;button.textContent=paid?"Continue to auction →":S.demo?"Complete $1 test step":"Pay $1 securely with Stripe";return a;
+ const a=await S.me(role);if(!a){message("payment-message","Submit your "+role+" information before completing participation.",true);button.disabled=true;button.textContent="Submit your information first";if(coordinate)coordinate.setAttribute("aria-disabled","true");return null;}
+ $("payment-account").textContent=a.name;$("payment-credit").textContent="$"+(Number(a.creditCents||0)/100).toFixed(2)+(S.demo?" test":"");if(coordinate){coordinate.href=coordinateHref(a);coordinate.removeAttribute("aria-disabled");}
+ const paid=a.creditCents>=100;$("payment-consent-row").hidden=paid;button.disabled=false;button.textContent="Auction →";return a;
+ }
+ async function ensureParticipation(){
+  a=await S.me(role);
+  if(!a)throw Error("Submit your "+role+" information before completing participation.");
+  if(a.creditCents<100){
+   const r=await S.checkout(role,$("payment-consent").checked);
+   if(!S.demo&&!r.paid){
+    const url=new URL(r.url);
+    if(url.protocol!=="https:"||url.hostname!=="checkout.stripe.com")throw Error("Unexpected checkout address.");
+    location.assign(url.href);
+    return null;
+   }
+   a=await S.me(role);
+   $("payment-credit").textContent="$1.00 test";
+   $("payment-consent-row").hidden=true;
+  }
+  return a;
  }
  let a=await refresh();
  if(params.get("cancelled"))message("payment-message","Checkout was cancelled. No auction access has been activated.");
  if(params.get("session_id")&&!S.demo){button.disabled=true;message("payment-message","Verifying payment…");try{await S.confirm(role,params.get("session_id"));history.replaceState(null,"","payment.html?role="+role);a=await refresh();message("payment-message",a.creditCents>=100?"Payment verified. Your $1 participation credit is ready.":"Payment is still pending. Refresh shortly to check again.");}catch(e){message("payment-message",e.message,true);await refresh();}}
  button.addEventListener("click",()=>busy(button,async()=>{try{
- a=await S.me(role);if(a.creditCents<100){const r=await S.checkout(role,$("payment-consent").checked);if(!S.demo&&!r.paid){const url=new URL(r.url);if(url.protocol!=="https:"||url.hostname!=="checkout.stripe.com")throw Error("Unexpected checkout address.");location.assign(url.href);return;}a=await S.me(role);$("payment-credit").textContent="$1.00 test";}
+ const account=await ensureParticipation();if(!account)return;
  const active=await S.activate(role);
- location.href=active.auctionId?"auction.html?id="+encodeURIComponent(active.auctionId)+"&view="+role:"auction.html?view="+role+"&select=1"+(a.submission?.title?"&address="+encodeURIComponent(a.submission.title):"");
+ location.href=active.auctionId?"auction.html?id="+encodeURIComponent(active.auctionId)+"&view="+role:"auction.html?view="+role+"&select=1"+(account.submission?.title?"&address="+encodeURIComponent(account.submission.title):"");
  }catch(e){message("payment-message",e.message,true);}}));
+ if(coordinate)coordinate.addEventListener("click",async event=>{
+  event.preventDefault();
+  if(coordinate.getAttribute("aria-disabled")==="true")return;
+  try{
+   coordinate.classList.add("is-busy");
+   const account=await ensureParticipation();if(!account)return;
+   location.href=coordinateHref(account);
+  }catch(e){message("payment-message",e.message,true);}
+  finally{coordinate.classList.remove("is-busy");}
+ });
 }
 async function portfolio(){
  if(!$("portfolio-table-body"))return;
