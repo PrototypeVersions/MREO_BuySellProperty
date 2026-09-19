@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
   <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v4">
-  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260919-coordination-v8">
+  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260919-provider-review-v9">
 </head>
 <body class="provider-job-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html?role=provider" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -16,6 +16,15 @@
 
   <main class="page-shell coordination-shell">
     <a class="back-link" href="coordination.html?role=provider#provider-queue-title"><span aria-hidden="true">←</span> Provider work queue</a>
+
+    <div class="workspace-viewbar provider-job-viewbar" aria-label="Provider job perspective">
+      <span class="workspace-view-label">View workspace as</span>
+      <div class="segmented coordination-segmented" role="group" aria-label="Provider job perspective">
+        <button type="button" data-provider-job-role="buyer" aria-pressed="false">Buyer</button>
+        <button type="button" data-provider-job-role="seller" aria-pressed="false">Seller</button>
+        <button type="button" data-provider-job-role="provider" aria-pressed="true">Service Partner</button>
+      </div>
+    </div>
 
     <section class="coordination-hero provider-job-hero">
       <div>
@@ -35,7 +44,7 @@
     <section class="attention-card" id="provider-job-attention">
       <span class="attention-light" aria-hidden="true"></span>
       <div class="attention-body"><span class="attention-state"></span><strong class="attention-title"></strong><p class="attention-copy"></p></div>
-      <a class="attention-link" href="#provider-job-request">Review request ↓</a>
+      <a class="attention-link" id="provider-job-attention-link" href="#provider-job-request">Review request ↓</a>
     </section>
 
     <div class="provider-job-detail-grid" id="provider-job-request">
@@ -54,13 +63,44 @@
       </section>
     </div>
 
+    <dialog class="provider-review-dialog" id="provider-review-dialog" aria-labelledby="provider-review-title">
+      <form method="dialog" class="provider-review-shell">
+        <div class="provider-review-header">
+          <div>
+            <p class="section-label" id="provider-review-eyebrow">Review packet</p>
+            <h2 id="provider-review-title">Review request packet</h2>
+          </div>
+          <button class="provider-review-close" value="cancel" aria-label="Close review">×</button>
+        </div>
+        <p class="provider-review-intro" id="provider-review-intro"></p>
+        <div class="provider-review-grid">
+          <section>
+            <h3>Connected information</h3>
+            <div class="provider-review-fields" id="provider-review-fields"></div>
+          </section>
+          <section>
+            <h3>Review checklist</h3>
+            <ul class="provider-review-checklist" id="provider-review-checklist"></ul>
+          </section>
+        </div>
+        <label class="provider-review-confirmation">
+          <input type="checkbox" id="provider-review-confirmation">
+          <span>I reviewed the information above and am ready to complete this step.</span>
+        </label>
+        <div class="provider-review-actions">
+          <button type="button" class="secondary-button" id="provider-review-cancel">Close</button>
+          <button type="button" class="primary-button button-blue" id="provider-review-confirm" disabled>Confirm review complete</button>
+        </div>
+      </form>
+    </dialog>
+
     <aside class="coordination-note"><strong>Fictional provider work item.</strong><p>This request is demonstration data designed to show how a participating company could receive work, review connected information, and complete its next step inside MREO.</p></aside>
   </main>
 
   <footer class="site-footer"><p>MREO connects property requests to participating service providers.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
   <script src="app.js"></script>
   <script src="provider-branding.js?v=20260919-provider-branding"></script>
-  <script src="coordination-v5-data.js?v=20260919-coordination-v8"></script>
-  <script src="coordination-provider-job.js?v=20260919-coordination-v8"></script>
+  <script src="coordination-v5-data.js?v=20260919-provider-review-v9"></script>
+  <script src="coordination-provider-job.js?v=20260919-provider-review-v9"></script>
 </body>
 </html>
