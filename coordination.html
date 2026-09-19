@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="marketplace.css?v=20260917-coordination-workspace">
   <link rel="stylesheet" href="coordination.css?v=20260917-workspace-v4">
-  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260919-coordination-v8">
+  <link rel="stylesheet" href="coordination-workspace-v5.css?v=20260919-network-collage-v18">
 </head>
 <body class="coordination-page">
   <header class="site-header"><a class="brand" href="index.html" aria-label="MREO home"><span class="brand-mark" aria-hidden="true"><span class="brand-circle"></span><span class="brand-square"></span></span><span class="brand-name">MREO</span></a><nav class="market-nav" aria-label="Main navigation"><a href="buyer.html">Buy</a><a href="seller.html">Sell</a><a href="portfolios.html">Portfolios</a><a href="coordination.html?role=provider" aria-current="page">Coordinate</a><a href="auction.html">Auctions</a></nav></header>
@@ -33,13 +33,64 @@
       </div>
 
       <aside class="record-card record-card-large" aria-label="Selected property record">
-        <img id="coord-record-image" alt="" hidden>
-        <p class="record-eyebrow">Shared property record</p>
-        <h2 id="coord-record-title">4218 Maple Ridge Drive, Dallas, TX 75229</h2>
-        <p id="coord-record-meta">$385,000 · Acquisition complete</p>
-        <span class="record-status" id="coord-record-status">MREO record connected</span>
-        <div class="record-card-actions">
-          <a class="text-link" id="coord-choose-property" href="properties.html">Choose another property →</a>
+        <div class="provider-network-visual" id="coord-network-visual" hidden>
+          <div class="network-property-grid" aria-label="Connected property network">
+            <article class="network-property-card">
+              <div class="network-property-art network-art-preston" aria-hidden="true">
+                <span class="network-building building-modern"></span>
+                <span class="network-landscape landscape-palms"></span>
+              </div>
+              <span class="network-status is-action"><i></i>Action needed</span>
+              <strong>2605 Preston Meadow</strong>
+              <small>Plano, TX</small>
+            </article>
+            <article class="network-property-card">
+              <div class="network-property-art network-art-hickory" aria-hidden="true">
+                <span class="network-building building-cottage"></span>
+                <span class="network-landscape landscape-trees"></span>
+              </div>
+              <span class="network-status is-action"><i></i>Action needed</span>
+              <strong>940 Hickory Grove</strong>
+              <small>Denton, TX</small>
+            </article>
+            <article class="network-property-card">
+              <div class="network-property-art network-art-travis" aria-hidden="true">
+                <span class="network-building building-desert"></span>
+                <span class="network-landscape landscape-mountain"></span>
+              </div>
+              <span class="network-status is-action"><i></i>Action needed</span>
+              <strong>3921 Travis Street</strong>
+              <small>Dallas, TX</small>
+            </article>
+            <article class="network-property-card">
+              <div class="network-property-art network-art-maple" aria-hidden="true">
+                <span class="network-building building-lodge"></span>
+                <span class="network-landscape landscape-water"></span>
+              </div>
+              <span class="network-status is-waiting"><i></i>Waiting</span>
+              <strong>4218 Maple Ridge</strong>
+              <small>Dallas, TX</small>
+            </article>
+          </div>
+          <div class="network-property-footer">
+            <p class="record-eyebrow">Connected property network</p>
+            <span class="record-status network-inbox-label">Service Partner network inbox</span>
+            <div class="network-job-stats" aria-label="Network job statistics">
+              <div><strong id="coord-network-active">7</strong><span>active jobs</span></div>
+              <div><strong id="coord-network-action">3</strong><span>need provider action</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="coord-property-record-content">
+          <img id="coord-record-image" alt="" hidden>
+          <p class="record-eyebrow">Shared property record</p>
+          <h2 id="coord-record-title">4218 Maple Ridge Drive, Dallas, TX 75229</h2>
+          <p id="coord-record-meta">$385,000 · Acquisition complete</p>
+          <span class="record-status" id="coord-record-status">MREO record connected</span>
+          <div class="record-card-actions">
+            <a class="text-link" id="coord-choose-property" href="properties.html">Choose another property →</a>
+          </div>
         </div>
       </aside>
     </section>
@@ -166,6 +217,6 @@
   </main>
 
   <footer class="site-footer"><p>MREO connects the transaction to the work required to transfer, improve, represent, rent, and manage the property.</p><p>&copy; <span id="current-year">2026</span> MREO</p></footer>
-  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260919-reset-all-v12"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260919-reset-all-v12"></script><script src="coordination-v5-data.js?v=20260919-provider-complete-v10"></script><script src="coordination.js?v=20260919-provider-inbox-v16"></script><script src="coordination-response-enhancements.js?v=20260917-provider-response-v1"></script><script src="coordination-workspace-v5.js?v=20260919-provider-inbox-v16"></script>
+  <script src="mreo-config.js"></script><script src="auction-core.js?v=20260914-blind-auction"></script><script src="mreo-service.js?v=20260919-reset-all-v12"></script><script src="app.js"></script><script src="mreo-ui.js?v=20260919-reset-all-v12"></script><script src="coordination-v5-data.js?v=20260919-provider-complete-v10"></script><script src="coordination.js?v=20260919-provider-inbox-v16"></script><script src="coordination-response-enhancements.js?v=20260917-provider-response-v1"></script><script src="coordination-workspace-v5.js?v=20260919-network-collage-v18"></script>
 </body>
 </html>
