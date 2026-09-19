@@ -548,24 +548,30 @@
     const copy=hero?.querySelector(":scope > div > p:not(.section-label)");
     const viewbar=hero?.querySelector(".workspace-viewbar");
     const card=hero?.querySelector(".record-card");
+    const networkVisual=$("coord-network-visual");
+    const propertyRecord=$("coord-property-record-content");
     if(direct){
       setTextIfChanged(label,"MREO · Service Partner Network");
       if(heading&&heading.innerHTML!=="One inbox.<br>Every property handoff.")heading.innerHTML="One inbox.<br>Every property handoff.";
       setTextIfChanged(copy,"Review incoming title, contractor, brokerage, rental, and management work across connected property records. Open a job to work it, then switch Buyer / Seller / Service Partner perspectives inside that exact job.");
       if(viewbar)viewbar.hidden=true;
-      const img=$("coord-record-image"); if(img)img.hidden=true;
-      setTextIfChanged($("coord-record-title"),"Multiple connected property records");
+      if(networkVisual)networkVisual.hidden=false;
+      if(propertyRecord)propertyRecord.hidden=true;
+
       const active=demoJobsForCurrentProperty().filter(job=>!job.complete).length;
       const action=demoJobsForCurrentProperty().filter(job=>!job.complete&&job.actionNeeded).length;
-      setTextIfChanged($("coord-record-meta"),`${active} active demonstration jobs · ${action} need provider action`);
-      setTextIfChanged($("coord-record-status"),"Service Partner network inbox");
+      setTextIfChanged($("coord-network-active"),String(active));
+      setTextIfChanged($("coord-network-action"),String(action));
+
       setTextIfChanged($("role-workspace-eyebrow"),"Service Partner workspace");
       setTextIfChanged($("role-workspace-title"),"Work that needs your company, in one queue.");
       setTextIfChanged($("role-workspace-copy"),"Start with the action-needed item above, then move through the queue below. Waiting items remain visible so the provider can see what is blocked and which party owns the next step.");
-      const choose=$("coord-choose-property"); if(choose){choose.href="properties.html";choose.textContent="Browse property marketplace →";}
-      if(card)card.setAttribute("aria-label","Provider network work queue");
-    }else if(viewbar){
-      viewbar.hidden=false;
+      if(card)card.setAttribute("aria-label","Connected property network");
+    }else{
+      if(viewbar)viewbar.hidden=false;
+      if(networkVisual)networkVisual.hidden=true;
+      if(propertyRecord)propertyRecord.hidden=false;
+      if(card)card.setAttribute("aria-label","Selected property record");
     }
   }
 
