@@ -675,3 +675,19 @@ test("Coordination Reset all test data clears cross-workspace browser state",asy
  expect(result.mediaCount).toBe(0);
  expect(result.listingExists).toBe(false);
 });
+
+
+test("default Coordinate workspace never mixes provider work from another address",async({page})=>{
+ await page.goto("/coordination.html");
+ await page.evaluate(()=>{
+   localStorage.setItem("mreo:coordination:role","provider");
+   localStorage.removeItem("mreo:coordination:provider-demo:v2");
+ });
+ await page.reload();
+ await expect(page.locator("#coord-record-title")).toContainText("4218 Maple Ridge Drive");
+ await expect(page.locator("#coord-attention-v5 .attention-copy")).toContainText("4218 Maple Ridge Drive");
+ await expect(page.locator("#coord-attention-v5 .attention-copy")).not.toContainText("2605 Preston Meadow");
+ await expect(page.locator("#provider-queue")).toContainText("4218 Maple Ridge Drive");
+ await expect(page.locator("#provider-queue")).not.toContainText("2605 Preston Meadow");
+ await expect(page.locator("#provider-queue")).not.toContainText("940 Hickory Grove");
+});
