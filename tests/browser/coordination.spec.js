@@ -160,7 +160,11 @@ test("title workflow rotates action across buyer seller and service partner",asy
  await page.getByRole("button",{name:"Service Partner",exact:true}).click();
  await expect(page.locator("#service-attention-v5 .attention-state")).toHaveText("Action needed");
  await page.getByRole("button",{name:"Accept request"}).click();
+ await expect(page.locator("#provider-company-logo")).toBeVisible();
+ await expect(page.locator("#provider-company-logo")).toHaveAttribute("src",/northstar-title-settlement\.png$/);
  await page.getByRole("link",{name:"Prepare provider response →"}).click();
+ await expect(page.locator("#response-provider-logo")).toBeVisible();
+ await expect(page.locator("#response-provider-logo")).toHaveAttribute("src",/northstar-title-settlement\.png$/);
  await expect(page.locator('input[name="totalCharges"]')).toHaveValue("$2,150");
  await expect(page.locator('textarea[name="requirements"]')).toContainText("Seller:");
  await page.getByRole("button",{name:"Send response to client"}).click();
