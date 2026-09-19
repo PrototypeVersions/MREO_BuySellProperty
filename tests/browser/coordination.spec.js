@@ -241,19 +241,28 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
  const row=page.locator("#new-listings .property-row").filter({hasText:"77 Seller Media Way"});
  await expect(row.getByRole("link",{name:"View / Prepare Interest"})).toBeVisible();
  await expect.poll(async()=>await row.locator(".property-thumbnail img").getAttribute("src")).toMatch(/^blob:/);
+ await expect(row.locator(".property-thumbnail img")).toHaveAttribute("data-primary-media-name","front.png");
  await row.getByRole("link",{name:"View / Prepare Interest"}).click();
  expect(new URL(page.url()).searchParams.get("auction")).toBe(created.auctionId);
  await expect(page.locator("#property-detail-image")).toHaveAttribute("src",/^blob:/);
+ await expect(page.locator("#property-detail-image")).toHaveAttribute("data-primary-media-name","front.png");
  await expect(page.locator("#seller-media-section")).toBeVisible();
  await expect(page.locator("#seller-media-gallery img")).toHaveCount(1);
+ await expect(page.locator("#seller-media-gallery")).toContainText("back.jpg");
+ await expect(page.locator("#seller-media-gallery")).not.toContainText("front.png");
  await expect(page.locator("#seller-media-gallery video")).toHaveCount(0);
  await expect(page.locator("#property-videos-section")).toBeVisible();
  await expect(page.locator("#property-video-gallery video")).toHaveCount(1);
  await expect(page.locator("#property-video-gallery")).toContainText("walkthrough.mp4");
- const galleryText=await page.locator("#seller-media-gallery").innerText();
- expect([galleryText.includes("front.png"),galleryText.includes("back.jpg")].filter(Boolean)).toHaveLength(1);
  const interest=page.getByRole("link",{name:"Prepare Interest"});
  expect(new URL(await interest.getAttribute("href"),page.url()).searchParams.get("auction")).toBe(created.auctionId);
+
+ await page.getByRole("link",{name:"Coordinate This Property"}).click();
+ await expect.poll(async()=>await page.locator("#coord-record-image").getAttribute("src")).toMatch(/^blob:/);
+ await expect(page.locator("#coord-record-image")).toHaveAttribute("data-primary-media-name","front.png");
+ await page.locator('[data-service="title"]').click();
+ await expect.poll(async()=>await page.locator("#service-record-image").getAttribute("src")).toMatch(/^blob:/);
+ await expect(page.locator("#service-record-image")).toHaveAttribute("data-primary-media-name","front.png");
 });
 
 
