@@ -264,6 +264,7 @@ test("seller-created listing uses one fixed hero, remaining images, and videos",
  await page.getByRole("button",{name:"Submit Buyer Interest",exact:true}).click();
  await expect(page).toHaveURL(/payment\.html\?role=buyer$/);
  await expect(page.getByRole("link",{name:"Coordinate →"})).toBeVisible();
+ await page.locator("#payment-consent").check();
  await page.getByRole("link",{name:"Coordinate →"}).click();
  await expect(page).toHaveURL(/coordination\.html\?/);
  await expect.poll(async()=>await page.locator("#coord-record-image").getAttribute("src")).toMatch(/^blob:/);
