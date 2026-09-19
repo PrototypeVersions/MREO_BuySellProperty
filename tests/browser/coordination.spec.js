@@ -331,7 +331,7 @@ test("selected provider follows a submitted request into the Service Partner vie
  await expect(page.locator("#provider-company-name")).toContainText("Redstone Restoration");
 });
 
-test("fictional provider queue jobs open into interactive provider detail pages",async({page})=>{
+test("fictional provider queue jobs require an actual review before completing provider steps",async({page})=>{
  await page.goto("/coordination.html?role=provider&auction=coord-v5-demo-jobs&address=4218%20Maple%20Ridge%20Drive%2C%20Dallas%2C%20TX%2075229");
  await page.evaluate(()=>{localStorage.removeItem("mreo:coordination:v3:coord-v5-demo-jobs");localStorage.removeItem("mreo:coordination:provider-demo:v1");});
  await page.reload();
@@ -342,9 +342,30 @@ test("fictional provider queue jobs open into interactive provider detail pages"
  await expect(page).toHaveURL(/coordination-provider-job\.html\?job=contractor-hickory/);
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
  await expect(page.locator("#provider-job-fields")).toContainText("$42,000");
+ await expect(page.getByRole("button",{name:"Buyer",exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Seller",exact:true})).toBeVisible();
+ await expect(page.getByRole("button",{name:"Service Partner",exact:true})).toBeVisible();
+
+ await page.getByRole("button",{name:"Review request packet"}).click();
+ const dialog=page.locator("#provider-review-dialog");
+ await expect(dialog).toBeVisible();
+ await expect(page.getByRole("heading",{name:"Rehabilitation request review"})).toBeVisible();
+ await expect(page.locator("#provider-review-fields")).toContainText("$42,000");
+ await expect(page.locator("#provider-review-checklist li")).toHaveCount(6);
+ await expect(page.locator("#provider-review-confirm")).toBeDisabled();
+ await page.locator("#provider-review-confirmation").check();
+ await expect(page.locator("#provider-review-confirm")).toBeEnabled();
  await page.getByRole("button",{name:"Mark estimate prepared"}).click();
+
+ await expect(dialog).toBeHidden();
  await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
  await expect(page.locator("#provider-job-status")).toContainText("Waiting for owner review");
+
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#provider-job-attention .attention-title")).toContainText("Review contractor proposal");
+ await page.getByRole("button",{name:"Service Partner",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
 });
 
 
@@ -499,4 +520,42 @@ test("branded fictional providers display their unique logos in provider work it
  await page.goto("/coordination-provider-job.html?job=contractor-brookfield");
  await expect(page.locator("#provider-job-logo")).toBeHidden();
  await expect(page.locator(".provider-logo-stage")).toBeHidden();
+});
+
+
+test("every action-needed fictional provider job opens a service-specific review packet",async({page})=>{
+ const cases=[
+   ["title-preston","Closing profile review","Vesting"],
+   ["contractor-hickory","Rehabilitation request review","Target budget"],
+   ["realtor-travis","Market-positioning request review","Service requested"],
+   ["rental-meridian","Rent-ready packet review","Target monthly rent"]
+ ];
+ for(const [job,title,field] of cases){
+   await page.goto("/coordination-provider-job.html?job="+job+"&role=provider");
+   await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v1"));
+   await page.reload();
+   await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
+   await page.getByRole("button",{name:"Review request packet"}).click();
+   await expect(page.locator("#provider-review-dialog")).toBeVisible();
+   await expect(page.getByRole("heading",{name:title})).toBeVisible();
+   await expect(page.locator("#provider-review-fields")).toContainText(field);
+   await expect(page.locator("#provider-review-checklist li")).not.toHaveCount(0);
+   await page.locator("#provider-review-cancel").click();
+ }
+});
+
+test("provider demo role switch identifies the correct client when the provider is waiting",async({page})=>{
+ await page.goto("/coordination-provider-job.html?job=title-maple&role=provider");
+ await page.evaluate(()=>localStorage.removeItem("mreo:coordination:provider-demo:v1"));
+ await page.reload();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
+ await page.getByRole("button",{name:"Seller",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Action needed");
+ await expect(page.locator("#provider-job-attention .attention-title")).toContainText("Submit seller payoff confirmation");
+ await page.getByRole("button",{name:"Review / respond"}).click();
+ await expect(page.locator("#provider-review-dialog")).toBeVisible();
+ await expect(page.locator("#provider-review-intro")).toContainText("payoff");
+ await page.locator("#provider-review-cancel").click();
+ await page.getByRole("button",{name:"Buyer",exact:true}).click();
+ await expect(page.locator("#provider-job-attention .attention-state")).toHaveText("Waiting");
 });
