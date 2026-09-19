@@ -68,9 +68,14 @@
     }
   }
 
+  const directProviderContext = !["auction","address","title","price","image","count","mediaKey"].some(key=>params.get(key));
   function role(){
-    const value=new URLSearchParams(location.search).get("role")||localStorage.getItem("mreo:coordination:role")||"buyer";
+    const explicit=new URLSearchParams(location.search).get("role");
+    const value=explicit||(directProviderContext?"provider":(localStorage.getItem("mreo:coordination:role")||"buyer"));
     return ["buyer","seller","provider"].includes(value)?value:"buyer";
+  }
+  function isDirectProviderInbox(){
+    return document.body.classList.contains("coordination-page")&&directProviderContext&&role()==="provider";
   }
   function loadState(){try{return JSON.parse(localStorage.getItem(stateKey)||"null");}catch{return null;}}
   function saveState(state){if(state)localStorage.setItem(stateKey,JSON.stringify(state));}
@@ -111,9 +116,11 @@
     return String(value||"").split(",")[0].trim().toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
   }
   function demoJobsForCurrentProperty(){
+    const current=demoJobs.map(currentDemoJob);
+    if(isDirectProviderInbox())return current;
     const identity=propertyIdentity(contextLabel);
     if(!identity)return [];
-    return demoJobs.map(currentDemoJob).filter(job=>propertyIdentity(job.property)===identity);
+    return current.filter(job=>propertyIdentity(job.property)===identity);
   }
   function providerJobHref(job){
     const out=new URLSearchParams();
@@ -485,8 +492,8 @@
       href:providerJobHref(job)
     }));
     const rows=[...actual,...examples];
-    const activeRows=rows.filter(row=>!row.complete);
-    const completedRows=rows.filter(row=>row.complete);
+    const activeRows=rows.filter(row=>!row.complete).sort((a,b)=>Number(!!b.actionNeeded)-Number(!!a.actionNeeded)||String(a.property).localeCompare(String(b.property)));
+    const completedRows=rows.filter(row=>row.complete).sort((a,b)=>String(a.property).localeCompare(String(b.property)));
     const key=JSON.stringify(rows.map(row=>[row.id,row.stateLabel,row.status,row.provider,row.meta]));
     if(queue.dataset.v5Key===key&&(queue.querySelector("[data-v5-provider-row]")||document.querySelector("#provider-completed-queue-v6 [data-v5-provider-row]")))return;
     queue.dataset.v5Key=key;
@@ -527,7 +534,39 @@
     const heading=$("provider-queue-title");
     setTextIfChanged(heading,"Provider work queue");
     const intro=$("provider-inbox-heading")?.nextElementSibling;
-    setTextIfChanged(intro,`Live requests and fictional demonstration work shown here are scoped to ${contextLabel}, so every provider item stays attached to the shared property record above.`);
+    setTextIfChanged(intro,isDirectProviderInbox()
+      ?"Action-needed work is shown first, followed by requests waiting on a buyer, seller, or owner. Open any job to work that exact property and switch perspectives inside the job."
+      :`Live requests and fictional demonstration work shown here are scoped to ${contextLabel}, so every provider item stays attached to the shared property record above.`);
+  }
+
+  function customizeDirectProviderInbox(){
+    if(!document.body.classList.contains("coordination-page"))return;
+    const direct=isDirectProviderInbox();
+    const hero=document.querySelector(".coordination-workspace-hero");
+    const label=hero?.querySelector(":scope > div > .section-label");
+    const heading=hero?.querySelector(":scope > div > h1");
+    const copy=hero?.querySelector(":scope > div > p:not(.section-label)");
+    const viewbar=hero?.querySelector(".workspace-viewbar");
+    const card=hero?.querySelector(".record-card");
+    if(direct){
+      setTextIfChanged(label,"MREO · Service Partner Network");
+      if(heading&&heading.innerHTML!=="One inbox.<br>Every property handoff.")heading.innerHTML="One inbox.<br>Every property handoff.";
+      setTextIfChanged(copy,"Review incoming title, contractor, brokerage, rental, and management work across connected property records. Open a job to work it, then switch Buyer / Seller / Service Partner perspectives inside that exact job.");
+      if(viewbar)viewbar.hidden=true;
+      const img=$("coord-record-image"); if(img)img.hidden=true;
+      setTextIfChanged($("coord-record-title"),"Multiple connected property records");
+      const active=demoJobsForCurrentProperty().filter(job=>!job.complete).length;
+      const action=demoJobsForCurrentProperty().filter(job=>!job.complete&&job.actionNeeded).length;
+      setTextIfChanged($("coord-record-meta"),`${active} active demonstration jobs · ${action} need provider action`);
+      setTextIfChanged($("coord-record-status"),"Service Partner network inbox");
+      setTextIfChanged($("role-workspace-eyebrow"),"Service Partner workspace");
+      setTextIfChanged($("role-workspace-title"),"Work that needs your company, in one queue.");
+      setTextIfChanged($("role-workspace-copy"),"Start with the action-needed item above, then move through the queue below. Waiting items remain visible so the provider can see what is blocked and which party owns the next step.");
+      const choose=$("coord-choose-property"); if(choose){choose.href="properties.html";choose.textContent="Browse property marketplace →";}
+      if(card)card.setAttribute("aria-label","Provider network work queue");
+    }else if(viewbar){
+      viewbar.hidden=false;
+    }
   }
 
   function hideDeprecatedAreas(){
@@ -553,6 +592,7 @@
       prefillKnownInformation();
       wireProviderSelection();
       renderProviderQueue();
+      customizeDirectProviderInbox();
       hydratePrimaryPropertyImage();
     }finally{applying=false;}
   }
