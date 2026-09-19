@@ -557,6 +557,10 @@
       if(viewbar)viewbar.hidden=true;
       if(networkVisual)networkVisual.hidden=false;
       if(propertyRecord)propertyRecord.hidden=true;
+      const networkJobs=demoJobsForCurrentProperty();
+      const activeJobs=networkJobs.filter(job=>!job.complete);
+      setTextIfChanged($("coord-network-active"),String(activeJobs.length));
+      setTextIfChanged($("coord-network-action"),String(activeJobs.filter(job=>job.actionNeeded).length));
 
       setTextIfChanged($("role-workspace-eyebrow"),"Service Partner workspace");
       setTextIfChanged($("role-workspace-title"),"Work that needs your company, in one queue.");
