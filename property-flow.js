@@ -29,7 +29,7 @@
       const media = await globalThis.MreoService.getMedia(mediaKey);
       const photos = media.filter((item) => (item.type || "").startsWith("image/") && item.blob);
       if (!photos.length) return;
-      const chosen = photos[stableMediaIndex(mediaKey, photos.length)];
+      const chosen = photos[0];
       imageEl.src = URL.createObjectURL(chosen.blob);
       imageEl.alt = "Seller-provided property photograph";
     } catch {}
@@ -171,7 +171,7 @@
 
     let hero = null;
     if (photos.length && main) {
-      hero = photos[stableMediaIndex(mediaKey, photos.length)];
+      hero = photos[0];
       main.src = URL.createObjectURL(hero.blob);
       main.alt = "Seller-provided property photograph for " + address;
       main.closest(".single-property-media").hidden = false;
